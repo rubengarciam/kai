@@ -77,7 +77,7 @@ Fill in `USER.md` (thresholds, goals, race calendar, injuries, whether you have 
 
 Optional: [chain wax and tyre tracking](docs/installation.md#gear-maintenance-optional-chain-wax-and-tyres).
 
-**5. Start talking**
+**5. Start talking** ([more prompts](docs/features.md#things-to-ask))
 
 > "Analyze this morning's run."
 >
