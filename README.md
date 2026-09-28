@@ -2,7 +2,7 @@
 
 Kai is an AI coaching agent for triathletes, runners, cyclists and swimmers. It connects to the platforms you already train with (TrainingPeaks, Garmin Connect, Strava), reads your actual data, and does what a good coach does with it: analyzes your sessions, tracks fitness and fatigue, watches recovery, and, if you don't have a human coach, builds periodized training plans for your races.
 
-It's built as an [OpenClaw](https://docs.openclaw.ai) agent workspace: a folder of plain markdown instructions plus four skills. There is no server or app to deploy. You point an agent at this folder and chat with it in whatever channel your agent runtime is connected to. It should also work with [Hermes Agent](#using-kai-with-hermes) (see below; untested).
+Kai is a folder of plain markdown instructions plus four skills, using two open conventions: `AGENTS.md` for instructions and `SKILL.md` for skills. There is no server or app to deploy. You point an agent runtime at this folder and chat with it. It was built on [OpenClaw](https://docs.openclaw.ai) and also works with [Claude Code](#using-kai-with-claude-code-or-codex) (tested). [Codex](#using-kai-with-claude-code-or-codex) and [Hermes Agent](#using-kai-with-hermes) should work too (untested, based on their docs).
 
 > Kai is a coaching assistant, not a doctor. It will flag things that look medical and tell you to see a professional.
 
@@ -56,7 +56,7 @@ If you have a human coach, tell Kai in `USER.md`. It switches to analyst mode: i
 ## How it works
 
 ```
-You (chat) ──► Kai (OpenClaw agent)
+You (chat) ──► Kai (your agent runtime)
                  │  reads AGENTS.md, SOUL.md, USER.md, memory/
                  │
                  ├─ skills/trainingpeaks ─────► TrainingPeaks  (load, workouts, PRs, weight)
@@ -75,7 +75,7 @@ Kai runs on **Linux or macOS** (on Windows, use WSL). Verified on Raspberry Pi O
 
 | Requirement | Version | Needed for | How to get it |
 | ----------- | ------- | ---------- | ------------- |
-| Agent runtime | [OpenClaw](https://docs.openclaw.ai) (needs Node.js 24.16+ or 26.1+, which its installer sets up) or [Hermes Agent](https://hermes-agent.nousresearch.com) | Everything | Follow the runtime's install guide |
+| Agent runtime | One of: [OpenClaw](https://docs.openclaw.ai) (needs Node.js 24.16+ or 26.1+, which its installer sets up), [Claude Code](https://code.claude.com), [Codex](https://developers.openai.com/codex) or [Hermes Agent](https://hermes-agent.nousresearch.com) | Everything | Follow the runtime's install guide |
 | `git` | any | Cloning this repo | `sudo apt install git` / `brew install git` |
 | `python3` | **3.10 or newer** | Garmin and TrainingPeaks skills | Check with `python3 --version` |
 | `python3-venv` | matches Python | Isolating the Garmin packages | Debian/Ubuntu/Raspberry Pi OS: `sudo apt install python3-venv`. macOS: included with Python |
@@ -90,7 +90,7 @@ The TrainingPeaks skill uses only the Python standard library, and the Strava sk
 
 ## Setup
 
-These steps are for OpenClaw. For Hermes, see [Using Kai with Hermes](#using-kai-with-hermes).
+These steps are for OpenClaw. For other runtimes, see [Claude Code or Codex](#using-kai-with-claude-code-or-codex) and [Hermes](#using-kai-with-hermes); the Python and data source steps (3 and 4) are the same everywhere.
 
 Check the [requirements](#requirements) first.
 
@@ -160,6 +160,45 @@ Example prompts:
 >
 > "Log weight 72.4. Had oats and a protein shake for breakfast."
 
+## Using Kai with Claude Code or Codex
+
+Both read the same files Kai is built from, so no conversion is needed. The repo includes what each tool looks for:
+
+| File | For | What it does |
+| ---- | --- | ------------ |
+| `AGENTS.md` | Codex (native), Claude Code (via `CLAUDE.md`) | Kai's operating manual |
+| `CLAUDE.md` | Claude Code | One line, `@AGENTS.md`, which imports the manual (Claude Code reads `CLAUDE.md`, not `AGENTS.md`) |
+| `.claude/skills/` | Claude Code | Symlinks to the four skills in `skills/` |
+| `.agents/skills/` | Codex | Symlinks to the same four skills |
+
+```bash
+# 1. Get the workspace
+git clone https://github.com/rubengarciam/kai.git ~/kai
+cd ~/kai
+
+# 2. Personalize
+cp templates/USER.md USER.md
+cp templates/MEMORY.md MEMORY.md
+
+# 3. Garmin only: install the pinned Python packages (see Requirements)
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+
+# 4. Start your tool from this folder
+claude      # Claude Code
+codex       # Codex
+```
+
+Then connect your data sources (step 4 of the setup above) and say hello.
+
+Notes:
+
+- **Start the tool from the repo folder.** Both load instructions and skills relative to the working directory. Kai's `AGENTS.md` tells the agent to read `SOUL.md`, `USER.md` and its memory files itself, so nothing else needs installing.
+- **Tested with Claude Code only.** In a scratch copy of the repo, Claude Code picked up `AGENTS.md` through `CLAUDE.md`, took on the Kai role, and listed all four skills. Codex is based on its documentation (it reads `AGENTS.md` and scans `.agents/skills/`) and hasn't been run against this repo.
+- **Symlinks need Linux or macOS** (or WSL on Windows). If your checkout has no symlinks, the skills still work: `AGENTS.md` refers to them by their `skills/` paths.
+- **`{baseDir}` in the skill docs** is an OpenClaw placeholder for "this skill's folder". Claude Code and Codex don't substitute it, so the agent resolves it to `skills/<name>` on its own. If it stumbles, tell it so.
+- **What you don't get:** these are terminal coding tools, so you chat with Kai in the terminal. Heartbeat checks, push notifications and chat-app delivery are OpenClaw features. Memory still works, because it's plain files.
+- **Permissions:** Kai runs scripts and writes files (`USER.md`, `memory/`), so the tool will ask you to approve those actions unless you've configured it otherwise.
+
 ## Using Kai with Hermes
 
 Kai also works with [Hermes Agent](https://hermes-agent.nousresearch.com) (Nous Research). Hermes reads `AGENTS.md` from the working directory, uses the same `SKILL.md` skill format, and keeps its identity in a global `SOUL.md`. This setup is based on Hermes's documentation. It has not been tested against a live Hermes install yet, so report any rough edges.
@@ -196,11 +235,14 @@ Notes:
 
 ```
 AGENTS.md          Kai's operating manual: session routine, roles, analysis format, quirks
+CLAUDE.md          Imports AGENTS.md for Claude Code
 SOUL.md            Personality and boundaries
 IDENTITY.md        Name and vibe
 SECURITY.md        Hard rules on credentials
 templates/         Starter USER.md and MEMORY.md
 requirements.txt   Pinned Python packages for the Garmin skill
+.claude/skills/    Symlinks to skills/ for Claude Code
+.agents/skills/    Symlinks to skills/ for Codex
 data/              Example nutrition log
 skills/
   endurance-training-coach/   Plan creation: assessment, zones, load, periodization, workouts, race day
@@ -211,7 +253,7 @@ skills/
 
 ## Privacy
 
-- Your credentials and data stay on your machine. Nothing is sent anywhere except the calls to TrainingPeaks / Garmin / Strava and to the language model your OpenClaw is configured with. That model provider will see the training data Kai reads.
+- Your credentials and data stay on your machine. Nothing is sent anywhere except the calls to TrainingPeaks / Garmin / Strava and to the language model your agent runtime is configured with. That model provider will see the training data Kai reads.
 - `.gitignore` excludes `USER.md`, `MEMORY.md`, `memory/`, your nutrition log and your tyre ledger, so you won't accidentally push your own data if you fork this.
 - TrainingPeaks and Garmin access use unofficial, reverse-engineered interfaces (cookie auth and the community `garminconnect` library). They can break or be rate-limited, and their terms may not endorse this use. Strava uses the official API.
 
