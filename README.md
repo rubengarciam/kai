@@ -15,7 +15,7 @@ Kai is a folder of plain markdown instructions plus four skills, using two open 
 | **Recovery monitoring** | HRV, resting HR, sleep, Body Battery and readiness trends read alongside load | Garmin |
 | **Training plans** | Periodized plans (base, build, peak, taper) with zones, paces, workouts and a race-day plan, validated with you first | Any one data source, or just a chat |
 | **Analyst mode** | Interprets data and preps questions for your human coach; never overrides the plan | Any data source |
-| **Gear tracking** | Live shoe and bike mileage, per-wheelset tyre wear, replacement and maintenance alerts | Strava |
+| **Gear tracking** | Live shoe and bike mileage, per-wheelset tyre wear with commands to fit, replace and retire tyre sets, replacement and maintenance alerts | Strava |
 | **Chain wax log** | A ledger of waxes per bike, km since last wax, and DUE SOON / DUE / OVERDUE alerts (early first re-wax, then a full interval) | Strava for odometers; manual bikes supported |
 | **Nutrition and weight** | Log food and weight in chat; deficits paced to training load; checks tomorrow's session first | Optional; weight syncs to TrainingPeaks |
 | **Race notes** | Race-specific pacing, fueling and taper plans saved for later chats | Nothing |
@@ -166,9 +166,13 @@ python3 skills/gear-maintenance/scripts/chain-wax.py report
 # A bike that isn't on Strava
 python3 skills/gear-maintenance/scripts/chain-wax.py add-bike partner --name "Partner's bike" --manual --odometer <km>
 
-# Tyres: copy the example, then edit wheelsets, Strava bike ids and fitted dates
-cp skills/gear-maintenance/data/tyres.example.json skills/gear-maintenance/data/tyres.json
+# Tyres: add each wheelset, fit its tyres, then get the mileage report
+python3 skills/gear-maintenance/scripts/tyres.py add-wheelset road_wheels --name "Road wheels" --usual-bike "Road bike" --gear-id <your Strava bike id>
+python3 skills/gear-maintenance/scripts/tyres.py add-set road_wheels --model "GP5000 28mm" --date <YYYY-MM-DD> --replace-at 4000
 bash skills/gear-maintenance/scripts/tyre-mileage.sh
+
+# Later, when you fit new tyres (retires the old set as of the same date)
+python3 skills/gear-maintenance/scripts/tyres.py add-set road_wheels --model "GP5000 28mm" --replace
 ```
 
 Find your Strava bike ids with `bash skills/strava/scripts/gear-mileage.sh`. From then on Kai runs the report itself whenever bike mileage or maintenance comes up, and you can just tell it "I waxed the road bike today" to log it. Your ledgers are plain files in `skills/gear-maintenance/data/`, git-ignored so they never get committed. See [skills/gear-maintenance](skills/gear-maintenance/README.md) for the statuses, the default intervals and how tyre mileage treats indoor rides.

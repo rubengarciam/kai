@@ -43,7 +43,8 @@ if [ ! -f "$LEDGER" ] && [ -f "$LEGACY_LEDGER" ]; then
 fi
 if [ ! -f "$LEDGER" ]; then
   echo "Error: no tyre ledger at $LEDGER." >&2
-  echo "Copy $SCRIPT_DIR/../data/tyres.example.json to tyres.json and edit it." >&2
+  echo "Start one with: python3 $SCRIPT_DIR/tyres.py add-wheelset road --name \"Road wheels\" --gear-id <strava bike id>" >&2
+  echo "(or copy $SCRIPT_DIR/../data/tyres.example.json to tyres.json and edit it)." >&2
   exit 1
 fi
 

@@ -150,7 +150,7 @@ CTL (fitness), ATL (fatigue), TSB (form = CTL − ATL), TSS, IF, resting HR, HRV
 If the athlete wants gear tracking:
 
 - Pull shoe and bike mileage live from Strava (`skills/strava/scripts/shoe-mileage.sh`, `gear-mileage.sh`). Never store mileage as static numbers.
-- Tyres are tracked per wheelset in `skills/gear-maintenance/data/tyres.json` (copy from `tyres.example.json`) via `skills/gear-maintenance/scripts/tyre-mileage.sh`. Chain waxing and tyres are the `gear-maintenance` skill; Strava only supplies the odometers.
+- Tyres are tracked per wheelset in `skills/gear-maintenance/data/tyres.json`. Report: `bash skills/gear-maintenance/scripts/tyre-mileage.sh`. Change the ledger with `python3 skills/gear-maintenance/scripts/tyres.py` (`list`, `add-wheelset`, `add-set WHEELSET --model M [--date D] [--replace-at KM] [--replace]`, `retire TYRE_ID`), never by hand. When the athlete says they fitted new tyres, run `add-set ... --replace` (it retires the old set as of the same date); a wheelset holds one active set at a time. Tyres exclude indoor rides; chains don't. Chain waxing and tyres are the `gear-maintenance` skill; Strava only supplies the odometers.
 - Record shoe rotation, replacement thresholds and maintenance intervals in `memory/project_equipment.md`. Typical defaults: racing shoes about 500 km, training shoes 700-800 km, tyre wear check every 500 km, full mechanic review every 2,000-3,000 km or before a big race. Alert when a threshold is within about 10%.
 
 ### Chain wax log
