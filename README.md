@@ -86,7 +86,7 @@ Kai runs on **Linux or macOS** (on Windows, use WSL). Verified on Raspberry Pi O
 
 The TrainingPeaks skill uses only the Python standard library, and the Strava skill only needs `curl` and Python. **Only Garmin needs extra packages.**
 
-> **Upgrading from v1.x?** The Garmin skill now uses `garminconnect` 0.3.x, which needs Python 3.12+. Reinstall the packages from `requirements.txt` and run the Garmin login once more: tokens saved by v1.x are in a different format and can't be reused.
+> **Upgrading from v1.x?** The Garmin skill now needs Python 3.12+ and you have to log in to Garmin once more. See [Upgrading from v1.x](#upgrading-from-v1x).
 
 ## Setup
 
@@ -170,6 +170,41 @@ Example prompts:
 >
 > "Log weight 72.4. Had oats and a protein shake for breakfast."
 
+## Upgrading from v1.x
+
+v2.0 changes how the Garmin skill logs in. TrainingPeaks, Strava and Kai's instructions are unchanged.
+
+| What changed | Why it matters |
+| ------------ | -------------- |
+| `garminconnect` 0.3.x and **Python 3.12+** (was 0.2.x and 3.10+) | The old library needed the removed `garth` login. A plain `pip install garminconnect` gets 0.3.x, which the old scripts couldn't use |
+| **Tokens are stored differently** (`garmin_tokens.json`) | Tokens saved by v1.x can't be reused. Log in once more |
+| `login` **prompts** for the password (hidden) and the MFA code | The password never touches shell history or the process list, and is never stored |
+| `--password` **is removed**, and a `password` in `config.json` is **ignored** (with a warning) | Passwords are no longer read from the command line or from disk. Use the prompt, `--password-stdin` or `GARMIN_PASSWORD` |
+| Login **needs a terminal** | If there is none (an agent's shell), the script tells you to run it yourself instead of hanging |
+
+To upgrade:
+
+```bash
+cd ~/.openclaw/workspace-kai        # or wherever you cloned Kai
+git pull
+
+# 1. Python 3.12+ (check with `python3 --version`; if older, install uv as in step 3 above)
+# 2. Rebuild the virtual environment
+rm -rf .venv
+python3 -m venv .venv               # or: uv venv --python 3.12 .venv
+.venv/bin/pip install -r requirements.txt    # with uv: uv pip install --python .venv/bin/python -r requirements.txt
+
+# 3. Log in again, yourself, in a terminal
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py login
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py status
+```
+
+Afterwards:
+
+- Delete the old `oauth1_token.json` and `oauth2_token.json` from `~/.config/garminconnect/` once everything works. `status` tells you when it finds them.
+- Remove any `password` line from `~/.config/garminconnect/config.json` and any plaintext credentials file you created for the old flow.
+- Anything of yours that calls the Garmin scripts (your own scripts, scheduled jobs, agent skills) must use `.venv/bin/python3` instead of the system `python3`, and must not pass `--password`.
+
 ## Using Kai with Claude Code or Codex
 
 Both read the same files Kai is built from, so no conversion is needed. The repo includes what each tool looks for:
@@ -190,7 +225,7 @@ cd ~/kai
 cp templates/USER.md USER.md
 cp templates/MEMORY.md MEMORY.md
 
-# 3. Garmin only: install the pinned Python packages (see Requirements)
+# 3. Garmin only: install the Python packages (Python 3.12+, see Requirements) (needs Python 3.12+; see Requirements)
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 # 4. Start your tool from this folder
@@ -222,7 +257,7 @@ cd ~/kai
 cp templates/USER.md USER.md
 cp templates/MEMORY.md MEMORY.md
 
-# 3. Garmin only: install the pinned Python packages (see Requirements)
+# 3. Garmin only: install the Python packages (Python 3.12+, see Requirements)
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 # 4. Give Kai its personality (Hermes only reads SOUL.md from its home directory)
@@ -250,7 +285,8 @@ SOUL.md            Personality and boundaries
 IDENTITY.md        Name and vibe
 SECURITY.md        Hard rules on credentials
 templates/         Starter USER.md and MEMORY.md
-requirements.txt   Pinned Python packages for the Garmin skill
+requirements.txt   Python packages for the Garmin skill (garminconnect 0.3.x, Python 3.12+)
+tests/             Offline tests for the Garmin login code
 .claude/skills/    Symlinks to skills/ for Claude Code
 .agents/skills/    Symlinks to skills/ for Codex
 data/              Example nutrition log
@@ -264,12 +300,23 @@ skills/
 ## Privacy
 
 - Your credentials and data stay on your machine. Nothing is sent anywhere except the calls to TrainingPeaks / Garmin / Strava and to the language model your agent runtime is configured with. That model provider will see the training data Kai reads.
+- Kai never stores your Garmin password. `login` asks for it on the terminal, uses it once, and keeps only the session tokens (`garmin_tokens.json`, readable by you alone). There is no `--password` flag, so the password can't end up in shell history, and Kai's instructions tell the agent never to ask for it in chat.
 - `.gitignore` excludes `USER.md`, `MEMORY.md`, `memory/`, your nutrition log and your tyre ledger, so you won't accidentally push your own data if you fork this.
 - TrainingPeaks and Garmin access use unofficial, reverse-engineered interfaces (cookie auth and the community `garminconnect` library). They can break or be rate-limited, and their terms may not endorse this use. Strava uses the official API.
 
 ## Customizing
 
 Kai's behavior lives in `AGENTS.md`, `SOUL.md` and `IDENTITY.md`. Edit them: change the tone, drop the nutrition section, add your own rules. When you correct Kai ("don't do X, because Y"), it records that as a `feedback` memory so the correction sticks.
+
+## Development and roadmap
+
+Run the offline tests (no network or Garmin account needed) from the repo root, in the virtual environment:
+
+```bash
+.venv/bin/python3 -m unittest discover -s tests -v
+```
+
+Planned work and known bugs are tracked in [the issues](https://github.com/rubengarciam/kai/issues). Contributions are welcome: issues labelled `help wanted` are good places to start.
 
 ## Credits and license
 
