@@ -84,20 +84,6 @@ bash scripts/gear-mileage.sh --pages 10 # scan further back
 
 Discovers all gear via activity `gear_id` fields and returns lifetime distance for bikes and shoes in separate sections. Requires `activity:read_all` scope only — no gear endpoint needed.
 
-### `chain-wax.py` — Chain wax log
-
-```bash
-python3 scripts/chain-wax.py report              # km since last wax, next due, status per bike
-python3 scripts/chain-wax.py report --json
-python3 scripts/chain-wax.py add-bike road --name "Road bike" --gear-id b1234567
-python3 scripts/chain-wax.py add-bike partner --name "Partner's bike" --manual --odometer 120
-python3 scripts/chain-wax.py log road --product "Hot wax" --degreased      # today, live odometer
-python3 scripts/chain-wax.py log road --odometer 1500 --date 2026-03-01 --interval 450-500
-python3 scripts/chain-wax.py set-odometer partner 180                     # manual bikes only
-```
-
-Keeps `data/chain-wax.json` (see `data/chain-wax.example.json`; git-ignored). Strava bikes read their lifetime distance from `/gear/{id}` (indoor rides included, since a chain wears on the trainer); manual bikes use the odometer you give, and `report` flags readings older than 30 days. The due range `[min, max]` km is fixed when a wax is logged: hot wax defaults to 150-250 km for the first re-wax and 450-500 km after that, drip lube to 200-300 km, or pass `--interval MIN-MAX`. Status: `OK`, `DUE SOON` (within the last 10% before `min`), `DUE` (between `min` and `max`), `OVERDUE` (past `max`). Exit code 2 means a Strava odometer could not be read. Find gear ids with `gear-mileage.sh`. Standard library only.
-
 ### `shoe-mileage.sh` — Shoe mileage only
 
 ```bash

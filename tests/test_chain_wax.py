@@ -1,4 +1,4 @@
-"""Offline tests for skills/strava/scripts/chain-wax.py (synthetic data, no network).
+"""Offline tests for skills/gear-maintenance/scripts/chain-wax.py (synthetic data, no network).
 
 Run from the repo root:  .venv/bin/python3 -m unittest discover -s tests -v
 """
@@ -14,7 +14,7 @@ from datetime import date
 from pathlib import Path
 from unittest import mock
 
-SCRIPT = Path(__file__).resolve().parent.parent / "skills" / "strava" / "scripts" / "chain-wax.py"
+SCRIPT = Path(__file__).resolve().parent.parent / "skills" / "gear-maintenance" / "scripts" / "chain-wax.py"
 spec = importlib.util.spec_from_file_location("chain_wax", SCRIPT)
 cw = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cw)
@@ -259,6 +259,32 @@ class LedgerSafety(TempLedger):
         with mock.patch.dict(os.environ, {"CHAIN_WAX_LEDGER": "/tmp/from-env.json"}):
             self.assertEqual(cw.ledger_path("/tmp/arg.json"), Path("/tmp/arg.json"))
             self.assertEqual(cw.ledger_path(None), Path("/tmp/from-env.json"))
+
+    def test_legacy_ledger_location_is_used_with_a_notice(self):
+        legacy = self.dir / "legacy.json"
+        legacy.write_text(json.dumps(ledger()))
+        new = self.dir / "new" / "chain-wax.json"
+        err = io.StringIO()
+        with mock.patch.object(cw, "DEFAULT_LEDGER", new), mock.patch.object(cw, "LEGACY_LEDGER", legacy), \
+             mock.patch.dict(os.environ, {}, clear=False), contextlib.redirect_stderr(err):
+            os.environ.pop("CHAIN_WAX_LEDGER", None)
+            self.assertEqual(cw.ledger_path(None), legacy)
+        self.assertIn("old location", err.getvalue())
+
+    def test_new_location_wins_over_legacy(self):
+        legacy, new = self.dir / "legacy.json", self.dir / "chain-wax.json"
+        legacy.write_text("{}"); new.write_text("{}")
+        with mock.patch.object(cw, "DEFAULT_LEDGER", new), mock.patch.object(cw, "LEGACY_LEDGER", legacy), \
+             mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("CHAIN_WAX_LEDGER", None)
+            self.assertEqual(cw.ledger_path(None), new)
+
+    def test_no_ledger_anywhere_uses_the_new_location(self):
+        new = self.dir / "new" / "chain-wax.json"
+        with mock.patch.object(cw, "DEFAULT_LEDGER", new), mock.patch.object(cw, "LEGACY_LEDGER", self.dir / "nope.json"), \
+             mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("CHAIN_WAX_LEDGER", None)
+            self.assertEqual(cw.ledger_path(None), new)
 
 
 class Cli(TempLedger):

@@ -150,18 +150,18 @@ CTL (fitness), ATL (fatigue), TSB (form = CTL − ATL), TSS, IF, resting HR, HRV
 If the athlete wants gear tracking:
 
 - Pull shoe and bike mileage live from Strava (`skills/strava/scripts/shoe-mileage.sh`, `gear-mileage.sh`). Never store mileage as static numbers.
-- Tyres are tracked per wheelset in `skills/strava/data/tyres.json` (copy from `tyres.example.json`) via `tyre-mileage.sh`.
+- Tyres are tracked per wheelset in `skills/gear-maintenance/data/tyres.json` (copy from `tyres.example.json`) via `skills/gear-maintenance/scripts/tyre-mileage.sh`. Chain waxing and tyres are the `gear-maintenance` skill; Strava only supplies the odometers.
 - Record shoe rotation, replacement thresholds and maintenance intervals in `memory/project_equipment.md`. Typical defaults: racing shoes about 500 km, training shoes 700-800 km, tyre wear check every 500 km, full mechanic review every 2,000-3,000 km or before a big race. Alert when a threshold is within about 10%.
 
 ### Chain wax log
 
-Use the script; don't do the arithmetic yourself: `python3 skills/strava/scripts/chain-wax.py` (Python standard library only). It reads live bike odometers from Strava, so it needs the Strava credentials (if it says the token expired, run `bash skills/strava/scripts/refresh_token.sh` and retry). The ledger is `skills/strava/data/chain-wax.json` (personal data, git-ignored; `add-bike` creates it, `chain-wax.example.json` shows the format). Never hand-edit the ledger.
+Use the script; don't do the arithmetic yourself: `python3 skills/gear-maintenance/scripts/chain-wax.py` (Python standard library only). It reads live bike odometers from Strava, so it needs the Strava credentials (if it says the token expired, run `bash skills/strava/scripts/refresh_token.sh` and retry). The ledger is `skills/gear-maintenance/data/chain-wax.json` (personal data, git-ignored; `add-bike` creates it, `chain-wax.example.json` shows the format). Never hand-edit the ledger.
 
 ```bash
-python3 skills/strava/scripts/chain-wax.py report [--json]         # km since last wax and next due, per bike
-python3 skills/strava/scripts/chain-wax.py log BIKE [--odometer KM] [--date YYYY-MM-DD] [--product TEXT] [--kind hot|drip] [--interval MIN-MAX] [--degreased]
-python3 skills/strava/scripts/chain-wax.py set-odometer BIKE KM    # manually tracked bikes only
-python3 skills/strava/scripts/chain-wax.py add-bike ID --name TEXT (--gear-id bXXXX | --manual [--odometer KM])
+python3 skills/gear-maintenance/scripts/chain-wax.py report [--json]         # km since last wax and next due, per bike
+python3 skills/gear-maintenance/scripts/chain-wax.py log BIKE [--odometer KM] [--date YYYY-MM-DD] [--product TEXT] [--kind hot|drip] [--interval MIN-MAX] [--degreased]
+python3 skills/gear-maintenance/scripts/chain-wax.py set-odometer BIKE KM    # manually tracked bikes only
+python3 skills/gear-maintenance/scripts/chain-wax.py add-bike ID --name TEXT (--gear-id bXXXX | --manual [--odometer KM])
 ```
 
 - **Whenever you pull bike mileage, or the athlete asks about the chain or maintenance, run `report`** and relay the result, naming the bike. Statuses: `OK`; `DUE SOON` = within the last 10% before the minimum of the due range; `DUE` = between the minimum and maximum; `OVERDUE` = past the maximum. Mention anything that isn't `OK`.

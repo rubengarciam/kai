@@ -48,7 +48,7 @@ If you have a human coach, tell Kai in `USER.md`. It switches to analyst mode: i
 
 ### Optional extras
 - **Gear tracking**: live shoe and bike mileage from Strava, tyre wear per wheelset, replacement and maintenance alerts.
-- **Chain wax log**: `skills/strava/scripts/chain-wax.py` keeps a ledger of waxes per bike (date, odometer, product, whether the chain was degreased) and reads live odometers from Strava. `report` shows km since the last wax and the next-due odometer, and flags `DUE SOON` (last 10% before the minimum), `DUE` and `OVERDUE`. By default a hot wax is followed by an early re-wax at 150-250 km (the first coating is thin), then 450-500 km; drip lube is 200-300 km; you can set any interval. Bikes without Strava tracking, like a partner's, work too: you give their odometer by hand and the report tells you when the reading is getting old. Kai runs the script instead of doing the arithmetic, so the answer is the same every session.
+- **Chain wax log**: `skills/gear-maintenance/scripts/chain-wax.py` keeps a ledger of waxes per bike (date, odometer, product, whether the chain was degreased) and reads live odometers from Strava. `report` shows km since the last wax and the next-due odometer, and flags `DUE SOON` (last 10% before the minimum), `DUE` and `OVERDUE`. By default a hot wax is followed by an early re-wax at 150-250 km (the first coating is thin), then 450-500 km; drip lube is 200-300 km; you can set any interval. Bikes without Strava tracking, like a partner's, work too: you give their odometer by hand and the report tells you when the reading is getting old. Kai runs the script instead of doing the arithmetic, so the answer is the same every session.
 - **Nutrition and weight tracking**: log food and weight in plain chat. Weight goes to TrainingPeaks, food to a local CSV. Kai tracks kcal and protein, paces deficits to your training load, and checks tomorrow's session before recommending a low-carb day.
 - **Race notes**: race-specific tactics, pacing and taper plans are saved to memory so they're available in any later chat.
 - **Proactive checks**: with heartbeats enabled, Kai can watch for things like a recovery trend turning bad or a gear threshold approaching.
@@ -62,6 +62,7 @@ You (chat) ──► Kai (your agent runtime)
                  ├─ skills/trainingpeaks ─────► TrainingPeaks  (load, workouts, PRs, weight)
                  ├─ skills/garmin-health-analysis ► Garmin Connect (sleep, HRV, readiness)
                  ├─ skills/strava ────────────► Strava         (laps, streams, gear)
+                 ├─ skills/gear-maintenance ──► chain wax + tyre ledgers (odometers from Strava or by hand)
                  └─ skills/endurance-training-coach  (zones, periodization, workouts, race day)
 ```
 
@@ -152,7 +153,7 @@ Each skill has its own setup guide. Credentials are stored on your machine under
 | Garmin Connect | The packages from step 3, then a one-time login (`garmin_auth.py login`, shown above) | [skills/garmin-health-analysis](skills/garmin-health-analysis/README.md) |
 | Strava | A free Strava API app (client ID and secret) and one OAuth authorization | [skills/strava](skills/strava/README.md) |
 
-Optional gear tracking: `cp skills/strava/data/tyres.example.json skills/strava/data/tyres.json` and edit it.
+Optional gear tracking (chain wax and tyres) uses the `gear-maintenance` skill: start with `python3 skills/gear-maintenance/scripts/chain-wax.py add-bike ...` or `cp skills/gear-maintenance/data/tyres.example.json skills/gear-maintenance/data/tyres.json` and edit it.
 
 ### 5. Start talking
 
@@ -204,6 +205,17 @@ Afterwards:
 - Delete the old `oauth1_token.json` and `oauth2_token.json` from `~/.config/garminconnect/` once everything works. `status` tells you when it finds them.
 - Remove any `password` line from `~/.config/garminconnect/config.json` and any plaintext credentials file you created for the old flow.
 - Anything of yours that calls the Garmin scripts (your own scripts, scheduled jobs, agent skills) must use `.venv/bin/python3` instead of the system `python3`, and must not pass `--password`.
+
+### Gear maintenance moved (v2.2)
+
+Chain waxing (`chain-wax.py`) and tyre tracking (`tyre-mileage.sh`) moved out of the Strava skill into their own skill, `skills/gear-maintenance/`, because they aren't Strava-specific (a bike without Strava tracking works too). Update any commands you use from `skills/strava/scripts/` to `skills/gear-maintenance/scripts/`, and move your ledgers from `skills/strava/data/` to `skills/gear-maintenance/data/`:
+
+```bash
+mkdir -p skills/gear-maintenance/data
+mv skills/strava/data/chain-wax.json skills/strava/data/tyres.json skills/gear-maintenance/data/ 2>/dev/null
+```
+
+A ledger left in the old place still works, with a notice, so nothing breaks in the meantime.
 
 ## Using Kai with Claude Code or Codex
 
@@ -286,7 +298,7 @@ IDENTITY.md        Name and vibe
 SECURITY.md        Hard rules on credentials
 templates/         Starter USER.md and MEMORY.md
 requirements.txt   Python packages for the Garmin skill (garminconnect 0.3.x, Python 3.12+)
-tests/             Offline tests for the Garmin login code
+tests/             Offline tests: Garmin login, chain wax log, and repo checks (right files tracked, personal ones ignored)
 .claude/skills/    Symlinks to skills/ for Claude Code
 .agents/skills/    Symlinks to skills/ for Codex
 data/              Example nutrition log
@@ -294,7 +306,8 @@ skills/
   endurance-training-coach/   Plan creation: assessment, zones, load, periodization, workouts, race day
   trainingpeaks/              TrainingPeaks CLI (pure Python stdlib)
   garmin-health-analysis/     Garmin Connect metrics and HTML dashboards
-  strava/                     Strava activities, laps, streams, gear and tyre mileage
+  strava/                     Strava activities, laps, streams and gear mileage
+  gear-maintenance/           Chain wax log and tyre wear ledgers (odometers from Strava or by hand)
 ```
 
 ## Privacy
