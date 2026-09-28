@@ -225,7 +225,7 @@ cd ~/kai
 cp templates/USER.md USER.md
 cp templates/MEMORY.md MEMORY.md
 
-# 3. Garmin only: install the Python packages (Python 3.12+, see Requirements) (needs Python 3.12+; see Requirements)
+# 3. Garmin only: install the Python packages (Python 3.12+, see Requirements)
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 # 4. Start your tool from this folder
