@@ -6,6 +6,7 @@
 /memory/
 /data/nutrition-log.csv
 /skills/strava/data/tyres.json
+/skills/strava/data/chain-wax.json
 /.env
 .venv/
 __pycache__/
