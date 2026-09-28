@@ -351,6 +351,27 @@ Run the offline tests (no network or Garmin account needed) from the repo root, 
 
 Planned work and known bugs are tracked in [the issues](https://github.com/rubengarciam/kai/issues). Contributions are welcome: issues labelled `help wanted` are good places to start.
 
+### Branches and pull requests
+
+Work happens on short-lived branches cut from `main` and merged through a pull request, one PR per issue (put `Closes #N` in the description). Branches are deleted after they merge.
+
+Name a branch `type/short-description`, in lowercase with hyphens:
+
+| Prefix | For | Example |
+| ------ | --- | ------- |
+| `feat/` | a new capability | `feat/garmin-0.3-auth`, `feat/gear-maintenance-skill` |
+| `fix/` | a bug fix | `fix/garmin-fit-zip` |
+| `docs/` | README and other docs only | `docs/hermes-setup` |
+| `test/` | tests and CI | `test/ci-smoke` |
+| `refactor/` | restructuring without new behaviour | `refactor/strava-python-port` |
+| `chore/` | housekeeping | `chore/bump-requirements` |
+
+- Put the skill or area in the description (`garmin`, `strava`, `trainingpeaks`, `gear-maintenance`, `coach`), and use the matching **label** on the issue and PR to filter by skill. An issue number is welcome too: `feat/10-chain-wax-log`.
+- Use the same type in the PR title, optionally with the area: `feat(garmin): support garminconnect 0.3.x`.
+- Run the tests before opening the PR (command above); they must pass.
+- Releases are tags on `main` named `vMAJOR.MINOR.PATCH`. A change that breaks documented commands, paths or Python requirements bumps the major version, and the release notes say how to upgrade.
+- Keep personal data out of everything you push: issues, PR comments and commit messages included. The repo-hygiene test checks that personal files are ignored, but it can't read your comments.
+
 ## Credits and license
 
 The skills are also published individually, and the coaching skill is adapted from [endurance-coach](https://github.com/shiv19/endurance-coach-skill) by shiv19 (MIT). Garmin skill originally by EversonL. See each skill's README for details.
