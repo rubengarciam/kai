@@ -13,16 +13,16 @@ Ask questions like:
 
 ```bash
 # Heart rate at specific time
-python3 scripts/garmin_query.py heart_rate "3:00 PM" --date 2026-01-24
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_query.py heart_rate "3:00 PM" --date 2026-01-24
 
 # Stress level
-python3 scripts/garmin_query.py stress "14:30"
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_query.py stress "14:30"
 
 # Body Battery
-python3 scripts/garmin_query.py body_battery "10:00 AM" --date 2026-01-23
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_query.py body_battery "10:00 AM" --date 2026-01-23
 
 # Steps at time
-python3 scripts/garmin_query.py steps "17:00"
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_query.py steps "17:00"
 ```
 
 **Time formats supported:**
@@ -36,60 +36,60 @@ python3 scripts/garmin_query.py steps "17:00"
 
 ```bash
 # Training readiness (daily readiness score)
-python3 scripts/garmin_data_extended.py training_readiness
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py training_readiness
 
 # Training status (load, VO2 max trends)
-python3 scripts/garmin_data_extended.py training_status
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py training_status
 
 # Endurance score
-python3 scripts/garmin_data_extended.py endurance_score
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py endurance_score
 
 # Hill score
-python3 scripts/garmin_data_extended.py hill_score
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py hill_score
 
 # Max metrics (VO2 max, etc.)
-python3 scripts/garmin_data_extended.py max_metrics
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py max_metrics
 
 # Fitness age
-python3 scripts/garmin_data_extended.py fitness_age
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py fitness_age
 ```
 
 ### Body Composition & Health
 
 ```bash
 # Body composition (weight, body fat %, muscle mass, BMI)
-python3 scripts/garmin_data_extended.py body_composition --date 2026-01-24
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py body_composition --date 2026-01-24
 
 # Weight history
-python3 scripts/garmin_data_extended.py weigh_ins --start 2026-01-01 --end 2026-01-24
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py weigh_ins --start 2026-01-01 --end 2026-01-24
 
 # Blood oxygen (SPO2)
-python3 scripts/garmin_data_extended.py spo2 --date 2026-01-24
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py spo2 --date 2026-01-24
 
 # Respiration (breathing rate throughout day)
-python3 scripts/garmin_data_extended.py respiration
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py respiration
 ```
 
 ### Activity Metrics
 
 ```bash
 # Detailed steps (time-series)
-python3 scripts/garmin_data_extended.py steps --date 2026-01-24
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py steps --date 2026-01-24
 
 # Floors climbed
-python3 scripts/garmin_data_extended.py floors
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py floors
 
 # Intensity minutes (vigorous/moderate)
-python3 scripts/garmin_data_extended.py intensity_minutes
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py intensity_minutes
 
 # Hydration/water intake
-python3 scripts/garmin_data_extended.py hydration
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py hydration
 
 # Detailed stress (time-series throughout day)
-python3 scripts/garmin_data_extended.py stress_detailed
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py stress_detailed
 
 # Intraday heart rate (all HR samples)
-python3 scripts/garmin_data_extended.py hr_intraday
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py hr_intraday
 ```
 
 ## 🗺️ Activity File Analysis (FIT/GPX)
@@ -103,23 +103,23 @@ Download and analyze activity files to answer questions like:
 
 ```bash
 # Download FIT file
-python3 scripts/garmin_activity_files.py download --activity-id 12345678 --format fit
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py download --activity-id 12345678 --format fit
 
 # Download GPX file (for GPS visualization)
-python3 scripts/garmin_activity_files.py download --activity-id 12345678 --format gpx
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py download --activity-id 12345678 --format gpx
 
 # Download TCX file
-python3 scripts/garmin_activity_files.py download --activity-id 12345678 --format tcx
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py download --activity-id 12345678 --format tcx
 ```
 
 ### Parse Activity Files
 
 ```bash
 # Parse FIT file (detailed metrics)
-python3 scripts/garmin_activity_files.py parse --file /tmp/activity_12345678.fit
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py parse --file /tmp/activity_12345678.fit
 
 # Parse GPX file (GPS track)
-python3 scripts/garmin_activity_files.py parse --file /tmp/activity_12345678.gpx
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py parse --file /tmp/activity_12345678.gpx
 ```
 
 **FIT files contain:**
@@ -136,17 +136,17 @@ python3 scripts/garmin_activity_files.py parse --file /tmp/activity_12345678.gpx
 
 ```bash
 # What was my heart rate/elevation at 1500 meters into the run?
-python3 scripts/garmin_activity_files.py query --file /tmp/activity_12345678.fit --distance 1500
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py query --file /tmp/activity_12345678.fit --distance 1500
 
 # What was my data at a specific time during the activity?
-python3 scripts/garmin_activity_files.py query --file /tmp/activity_12345678.fit --time "2026-01-24T10:15:30"
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py query --file /tmp/activity_12345678.fit --time "2026-01-24T10:15:30"
 ```
 
 ### Analyze Activity
 
 ```bash
 # Get comprehensive statistics
-python3 scripts/garmin_activity_files.py analyze --file /tmp/activity_12345678.fit
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py analyze --file /tmp/activity_12345678.fit
 ```
 
 **Returns:**
@@ -204,7 +204,7 @@ https://connect.garmin.com/modern/activity/12345678
 
 Or find it programmatically:
 ```bash
-python3 scripts/garmin_data.py activities --days 7
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py activities --days 7
 # Look for "activity_id" in each activity
 ```
 
@@ -212,11 +212,11 @@ python3 scripts/garmin_data.py activities --days 7
 
 ```bash
 # Get recent activity IDs
-activities=$(python3 scripts/garmin_data.py activities --days 7 | jq -r '.activities[].activityId')
+activities=$(.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py activities --days 7 | jq -r '.activities[].activityId')
 
 # Download all FIT files
 for id in $activities; do
-  python3 scripts/garmin_activity_files.py download --activity-id $id --format fit
+  .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py download --activity-id $id --format fit
 done
 ```
 

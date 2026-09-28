@@ -50,7 +50,7 @@ All scripts load credentials from this file automatically. Alternatively, set `S
 Access tokens expire every 6 hours. Refresh with:
 
 ```bash
-bash scripts/refresh_token.sh
+bash skills/strava/scripts/refresh_token.sh
 ```
 
 Run this if a script returns a 401 error. New tokens are written back to the credentials file automatically.
@@ -60,9 +60,9 @@ Run this if a script returns a 401 error. New tokens are written back to the cre
 ### `activities.sh` — Recent activities
 
 ```bash
-bash scripts/activities.sh              # last 14 days
-bash scripts/activities.sh --days 30
-bash scripts/activities.sh --days 7 --count 20
+bash skills/strava/scripts/activities.sh              # last 14 days
+bash skills/strava/scripts/activities.sh --days 30
+bash skills/strava/scripts/activities.sh --days 7 --count 20
 ```
 
 Output: date, sport type, name, distance, time, elevation, avg HR.
@@ -70,7 +70,7 @@ Output: date, sport type, name, distance, time, elevation, avg HR.
 ### `athlete-stats.sh` — All-time totals
 
 ```bash
-bash scripts/athlete-stats.sh
+bash skills/strava/scripts/athlete-stats.sh
 ```
 
 Returns cumulative all-time and YTD totals for Run, Ride, and Swim: activity count, distance, time, and elevation.
@@ -78,8 +78,8 @@ Returns cumulative all-time and YTD totals for Run, Ride, and Swim: activity cou
 ### `gear-mileage.sh` — Bike and shoe mileage
 
 ```bash
-bash scripts/gear-mileage.sh            # scans last 250 activities
-bash scripts/gear-mileage.sh --pages 10 # scan further back
+bash skills/strava/scripts/gear-mileage.sh            # scans last 250 activities
+bash skills/strava/scripts/gear-mileage.sh --pages 10 # scan further back
 ```
 
 Discovers all gear via activity `gear_id` fields and returns lifetime distance for bikes and shoes in separate sections. Requires `activity:read_all` scope only — no gear endpoint needed.
@@ -87,7 +87,7 @@ Discovers all gear via activity `gear_id` fields and returns lifetime distance f
 ### `shoe-mileage.sh` — Shoe mileage only
 
 ```bash
-bash scripts/shoe-mileage.sh
+bash skills/strava/scripts/shoe-mileage.sh
 ```
 
 Shoes only. Use `gear-mileage.sh` for both bikes and shoes.

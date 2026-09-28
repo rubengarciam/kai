@@ -23,7 +23,7 @@ Stored at `~/.config/trainingpeaks/`:
 3. Find `Production_tpAuth`, copy the value
 
 ```bash
-python3 {baseDir}/scripts/tp.py auth "eyJhbGci..."
+python3 skills/trainingpeaks/scripts/tp.py auth "eyJhbGci..."
 # ✓ Authenticated successfully!
 #   Account: user@example.com
 #   Athlete ID: 1234567
@@ -31,18 +31,18 @@ python3 {baseDir}/scripts/tp.py auth "eyJhbGci..."
 
 ## Commands
 
-All commands: `python3 {baseDir}/scripts/tp.py <command> [options]`
+All commands: `python3 skills/trainingpeaks/scripts/tp.py <command> [options]`
 
 ### `auth-status` — Check Authentication
 
 ```bash
-python3 {baseDir}/scripts/tp.py auth-status
+python3 skills/trainingpeaks/scripts/tp.py auth-status
 ```
 
 ### `profile` — Athlete Profile
 
 ```bash
-python3 {baseDir}/scripts/tp.py profile
+python3 skills/trainingpeaks/scripts/tp.py profile
 ```
 
 Returns name, email, athlete ID, account type, bike FTP.
@@ -51,14 +51,14 @@ Returns name, email, athlete ID, account type, bike FTP.
 
 ```bash
 # All workouts in a week
-python3 {baseDir}/scripts/tp.py workouts 2026-04-01 2026-04-07
+python3 skills/trainingpeaks/scripts/tp.py workouts 2026-04-01 2026-04-07
 
 # Filter by status
-python3 {baseDir}/scripts/tp.py workouts 2026-04-01 2026-04-07 --filter completed
-python3 {baseDir}/scripts/tp.py workouts 2026-04-01 2026-04-07 --filter planned
+python3 skills/trainingpeaks/scripts/tp.py workouts 2026-04-01 2026-04-07 --filter completed
+python3 skills/trainingpeaks/scripts/tp.py workouts 2026-04-01 2026-04-07 --filter planned
 
 # JSON output
-python3 {baseDir}/scripts/tp.py workouts 2026-04-01 2026-04-07 --json
+python3 skills/trainingpeaks/scripts/tp.py workouts 2026-04-01 2026-04-07 --json
 ```
 
 Output columns: Date, Title, Sport, Status (✓/○), Planned duration, Actual duration, TSS, Distance.
@@ -67,8 +67,8 @@ Max range: 90 days.
 ### `workout <id>` — Workout Detail
 
 ```bash
-python3 {baseDir}/scripts/tp.py workout 123456789
-python3 {baseDir}/scripts/tp.py workout 123456789 --json
+python3 skills/trainingpeaks/scripts/tp.py workout 123456789
+python3 skills/trainingpeaks/scripts/tp.py workout 123456789 --json
 ```
 
 Returns full detail: description, coach notes, planned vs actual metrics, all TSS/IF values.
@@ -76,9 +76,9 @@ Returns full detail: description, coach notes, planned vs actual metrics, all TS
 ### `fitness` — CTL / ATL / TSB
 
 ```bash
-python3 {baseDir}/scripts/tp.py fitness           # last 90 days
-python3 {baseDir}/scripts/tp.py fitness --days 365
-python3 {baseDir}/scripts/tp.py fitness --json
+python3 skills/trainingpeaks/scripts/tp.py fitness           # last 90 days
+python3 skills/trainingpeaks/scripts/tp.py fitness --days 365
+python3 skills/trainingpeaks/scripts/tp.py fitness --json
 ```
 
 Shows current CTL (fitness), ATL (fatigue), TSB (form) with status interpretation and 14-day daily table.
@@ -87,13 +87,13 @@ Shows current CTL (fitness), ATL (fatigue), TSB (form) with status interpretatio
 
 ```bash
 # Best 20-minute power ever
-python3 {baseDir}/scripts/tp.py peaks Bike power20min
+python3 skills/trainingpeaks/scripts/tp.py peaks Bike power20min
 
 # 5K run PRs from last year
-python3 {baseDir}/scripts/tp.py peaks Run speed5K --days 365
+python3 skills/trainingpeaks/scripts/tp.py peaks Run speed5K --days 365
 
 # 5-second max power
-python3 {baseDir}/scripts/tp.py peaks Bike power5sec
+python3 skills/trainingpeaks/scripts/tp.py peaks Bike power5sec
 ```
 
 **Bike PR types:** `power5sec`, `power1min`, `power5min`, `power10min`, `power20min`, `power60min`, `power90min`, `hR5sec`–`hR90min`
@@ -105,8 +105,8 @@ python3 {baseDir}/scripts/tp.py peaks Bike power5sec
 Get weight, HR, HRV, sleep, steps, SPO2, RMR, injury score:
 
 ```bash
-python3 {baseDir}/scripts/tp.py metrics 2026-04-01 2026-04-07
-python3 {baseDir}/scripts/tp.py metrics 2026-04-01 2026-04-07 --json
+python3 skills/trainingpeaks/scripts/tp.py metrics 2026-04-01 2026-04-07
+python3 skills/trainingpeaks/scripts/tp.py metrics 2026-04-01 2026-04-07 --json
 ```
 
 Available metrics: `weight` (kg), `pulse` (bpm), `hrv`, `sleep` (hours), `spo2` (%), `steps`, `rmr` (kcal), `injury` (1–10)
@@ -114,8 +114,8 @@ Available metrics: `weight` (kg), `pulse` (bpm), `hrv`, `sleep` (hours), `spo2` 
 ### `log-metric <date> <metric> <value>` — Log a Health Metric
 
 ```bash
-python3 {baseDir}/scripts/tp.py log-metric 2026-04-07 weight 73.5
-python3 {baseDir}/scripts/tp.py log-metric 2026-04-07 pulse 44
+python3 skills/trainingpeaks/scripts/tp.py log-metric 2026-04-07 weight 73.5
+python3 skills/trainingpeaks/scripts/tp.py log-metric 2026-04-07 pulse 44
 ```
 
 ## Key Metrics

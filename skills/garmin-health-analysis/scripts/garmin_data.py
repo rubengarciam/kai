@@ -329,7 +329,7 @@ def main():
     # Get authenticated client
     client = get_client()
     if not client:
-        print('{"error": "Not authenticated. Run: python3 scripts/garmin_auth.py login --email YOUR_EMAIL --password YOUR_PASSWORD"}')
+        print('{"error": "Not authenticated. Ask the account owner to run this in their own terminal: .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py login"}')
         sys.exit(1)
     
     # Fetch requested data

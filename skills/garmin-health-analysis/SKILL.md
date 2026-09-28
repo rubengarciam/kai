@@ -18,11 +18,11 @@ Stored at `~/.config/garminconnect/`:
 - `config.json` — optional, key `email` only. A `password` key is ignored
 - Set `GARMIN_TOKEN_DIR` to keep tokens somewhere else
 
-Auth status: `python3 {baseDir}/scripts/garmin_auth.py status`
+Auth status: `.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py status`
 
 Re-authenticate if tokens expire:
 ```bash
-python3 {baseDir}/scripts/garmin_auth.py login
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py login
 ```
 
 ---
@@ -30,7 +30,7 @@ python3 {baseDir}/scripts/garmin_auth.py login
 ## `garmin_data.py` — Core Health Metrics
 
 ```bash
-python3 {baseDir}/scripts/garmin_data.py <metric> [--days N] [--start YYYY-MM-DD] [--end YYYY-MM-DD]
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py <metric> [--days N] [--start YYYY-MM-DD] [--end YYYY-MM-DD]
 ```
 
 **Available metrics:**
@@ -48,12 +48,12 @@ python3 {baseDir}/scripts/garmin_data.py <metric> [--days N] [--start YYYY-MM-DD
 
 **Examples:**
 ```bash
-python3 {baseDir}/scripts/garmin_data.py summary --days 1        # today's snapshot
-python3 {baseDir}/scripts/garmin_data.py sleep --days 7
-python3 {baseDir}/scripts/garmin_data.py hrv --days 30
-python3 {baseDir}/scripts/garmin_data.py heart_rate --days 14
-python3 {baseDir}/scripts/garmin_data.py activities --days 7
-python3 {baseDir}/scripts/garmin_data.py sleep --start 2026-04-01 --end 2026-04-07
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py summary --days 1        # today's snapshot
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py sleep --days 7
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py hrv --days 30
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py heart_rate --days 14
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py activities --days 7
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py sleep --start 2026-04-01 --end 2026-04-07
 ```
 
 ---
@@ -61,7 +61,7 @@ python3 {baseDir}/scripts/garmin_data.py sleep --start 2026-04-01 --end 2026-04-
 ## `garmin_data_extended.py` — Training & Performance Metrics
 
 ```bash
-python3 {baseDir}/scripts/garmin_data_extended.py <metric> [--date YYYY-MM-DD] [--start ...] [--end ...]
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py <metric> [--date YYYY-MM-DD] [--start ...] [--end ...]
 ```
 
 **Available metrics:**
@@ -90,16 +90,16 @@ python3 {baseDir}/scripts/garmin_data_extended.py <metric> [--date YYYY-MM-DD] [
 
 **Examples:**
 ```bash
-python3 {baseDir}/scripts/garmin_data_extended.py training_readiness
-python3 {baseDir}/scripts/garmin_data_extended.py race_predictions
-python3 {baseDir}/scripts/garmin_data_extended.py max_metrics
-python3 {baseDir}/scripts/garmin_data_extended.py lactate_threshold
-python3 {baseDir}/scripts/garmin_data_extended.py body_composition
-python3 {baseDir}/scripts/garmin_data_extended.py weigh_ins --start 2026-01-01 --end 2026-04-07
-python3 {baseDir}/scripts/garmin_data_extended.py spo2 --date 2026-04-06
-python3 {baseDir}/scripts/garmin_data_extended.py activity_splits --activity-id 12345678
-python3 {baseDir}/scripts/garmin_data_extended.py personal_records
-python3 {baseDir}/scripts/garmin_data_extended.py endurance_score
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py training_readiness
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py race_predictions
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py max_metrics
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py lactate_threshold
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py body_composition
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py weigh_ins --start 2026-01-01 --end 2026-04-07
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py spo2 --date 2026-04-06
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py activity_splits --activity-id 12345678
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py personal_records
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py endurance_score
 ```
 
 ---
@@ -107,7 +107,7 @@ python3 {baseDir}/scripts/garmin_data_extended.py endurance_score
 ## `garmin_chart.py` — Interactive HTML Charts
 
 ```bash
-python3 {baseDir}/scripts/garmin_chart.py <chart> [--days N] [--output path.html]
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_chart.py <chart> [--days N] [--output path.html]
 ```
 
 | Chart | What it shows |
@@ -119,8 +119,8 @@ python3 {baseDir}/scripts/garmin_chart.py <chart> [--days N] [--output path.html
 | `dashboard` | All 4 charts combined |
 
 ```bash
-python3 {baseDir}/scripts/garmin_chart.py dashboard --days 30
-python3 {baseDir}/scripts/garmin_chart.py hrv --days 90 --output ~/hrv-trend.html
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_chart.py dashboard --days 30
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_chart.py hrv --days 90 --output ~/hrv-trend.html
 ```
 
 Charts open in default browser. Built with Chart.js.
@@ -132,8 +132,8 @@ Charts open in default browser. Built with Chart.js.
 Query data at a specific time of day (e.g. "what was my HR at 3pm?"):
 
 ```bash
-python3 {baseDir}/scripts/garmin_query.py heart_rate "3pm"
-python3 {baseDir}/scripts/garmin_query.py heart_rate "15:00" --date 2026-04-06
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_query.py heart_rate "3pm"
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_query.py heart_rate "15:00" --date 2026-04-06
 ```
 
 ---

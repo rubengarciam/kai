@@ -133,5 +133,23 @@ class Login(unittest.TestCase):
         self.assertEqual(d.stat().st_mode & 0o777, 0o700)
 
 
+class NotAuthenticatedMessages(unittest.TestCase):
+    """Every script must tell an unauthenticated user to run the login themselves, and never mention --password."""
+
+    CASES = [("garmin_data.py", ["sleep"]), ("garmin_data_extended.py", ["steps"]),
+             ("garmin_query.py", ["heart_rate", "10:00"]), ("garmin_activity_files.py", ["download", "--activity-id", "1"]),
+             ("garmin_chart.py", ["sleep", "--output", "/dev/null"])]
+
+    def test_scripts_point_to_the_login_command(self):
+        env = {**os.environ, "GARMIN_TOKEN_DIR": tempfile.mkdtemp()}
+        for script, args in self.CASES:
+            p = subprocess.run([sys.executable, str(SCRIPTS / script), *args], capture_output=True, text=True,
+                               env=env, stdin=subprocess.DEVNULL, timeout=60)
+            text = p.stdout + p.stderr
+            self.assertNotEqual(p.returncode, 0, script)
+            self.assertIn("garmin_auth.py login", text, script)
+            self.assertNotIn("--password", text, script)
+
+
 if __name__ == "__main__":
     unittest.main()

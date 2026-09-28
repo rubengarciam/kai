@@ -37,7 +37,7 @@ On Python older than 3.12, use `uv` (see the top-level README).
 ### 2. Authenticate
 
 ```bash
-python3 scripts/garmin_auth.py login
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py login
 # Garmin email: you@example.com
 # Garmin password for you@example.com:   (hidden)
 # 🔐 Logging in as you@example.com...
@@ -54,7 +54,7 @@ The password is asked for on the terminal and is never written to disk. Run this
 ### 3. Check auth status
 
 ```bash
-python3 scripts/garmin_auth.py status
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py status
 ```
 
 ## Credentials
@@ -69,14 +69,14 @@ Stored at `~/.config/garminconnect/`:
 ### `garmin_auth.py` — Authentication
 
 ```bash
-python3 scripts/garmin_auth.py login --email EMAIL --password PASSWORD
-python3 scripts/garmin_auth.py status
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py login            # prompts for email, password and MFA code (run it yourself in a terminal)
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py status
 ```
 
 ### `garmin_data.py` — Core health metrics
 
 ```bash
-python3 scripts/garmin_data.py <metric> [--days N] [--start YYYY-MM-DD] [--end YYYY-MM-DD]
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py <metric> [--days N] [--start YYYY-MM-DD] [--end YYYY-MM-DD]
 ```
 
 | Metric | What it returns |
@@ -91,18 +91,18 @@ python3 scripts/garmin_data.py <metric> [--days N] [--start YYYY-MM-DD] [--end Y
 | `profile` | Athlete profile and settings |
 
 ```bash
-python3 scripts/garmin_data.py summary --days 1
-python3 scripts/garmin_data.py sleep --days 7
-python3 scripts/garmin_data.py hrv --days 30
-python3 scripts/garmin_data.py heart_rate --days 14
-python3 scripts/garmin_data.py activities --days 7
-python3 scripts/garmin_data.py sleep --start 2026-04-01 --end 2026-04-07
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py summary --days 1
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py sleep --days 7
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py hrv --days 30
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py heart_rate --days 14
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py activities --days 7
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py sleep --start 2026-04-01 --end 2026-04-07
 ```
 
 ### `garmin_data_extended.py` — Training and performance metrics
 
 ```bash
-python3 scripts/garmin_data_extended.py <metric> [--date YYYY-MM-DD] [--start ...] [--end ...]
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py <metric> [--date YYYY-MM-DD] [--start ...] [--end ...]
 ```
 
 | Metric | What it returns |
@@ -128,20 +128,20 @@ python3 scripts/garmin_data_extended.py <metric> [--date YYYY-MM-DD] [--start ..
 | `activity_splits` | Lap splits for a specific activity |
 
 ```bash
-python3 scripts/garmin_data_extended.py training_readiness
-python3 scripts/garmin_data_extended.py race_predictions
-python3 scripts/garmin_data_extended.py max_metrics
-python3 scripts/garmin_data_extended.py body_composition
-python3 scripts/garmin_data_extended.py weigh_ins --start 2026-01-01 --end 2026-04-07
-python3 scripts/garmin_data_extended.py spo2 --date 2026-04-06
-python3 scripts/garmin_data_extended.py activity_splits --activity-id 12345678
-python3 scripts/garmin_data_extended.py personal_records
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py training_readiness
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py race_predictions
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py max_metrics
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py body_composition
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py weigh_ins --start 2026-01-01 --end 2026-04-07
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py spo2 --date 2026-04-06
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py activity_splits --activity-id 12345678
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py personal_records
 ```
 
 ### `garmin_chart.py` — Interactive HTML charts
 
 ```bash
-python3 scripts/garmin_chart.py <chart> [--days N] [--output path.html]
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_chart.py <chart> [--days N] [--output path.html]
 ```
 
 | Chart | What it shows |
@@ -153,8 +153,8 @@ python3 scripts/garmin_chart.py <chart> [--days N] [--output path.html]
 | `dashboard` | All four charts combined |
 
 ```bash
-python3 scripts/garmin_chart.py dashboard --days 30
-python3 scripts/garmin_chart.py hrv --days 90 --output ~/hrv-trend.html
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_chart.py dashboard --days 30
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_chart.py hrv --days 90 --output ~/hrv-trend.html
 ```
 
 Charts open in the default browser. Built with Chart.js.
@@ -164,8 +164,8 @@ Charts open in the default browser. Built with Chart.js.
 Query data at a specific time of day:
 
 ```bash
-python3 scripts/garmin_query.py heart_rate "3pm"
-python3 scripts/garmin_query.py heart_rate "15:00" --date 2026-04-06
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_query.py heart_rate "3pm"
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_query.py heart_rate "15:00" --date 2026-04-06
 ```
 
 ## Key metrics reference
@@ -197,7 +197,7 @@ Trained athletes typically range 40–55 bpm. Sudden increases suggest fatigue, 
 
 ## Troubleshooting
 
-**401 / auth error**: Run `python3 scripts/garmin_auth.py login` again.
+**401 / auth error**: Run `.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py login` again.
 
 **Missing data**: Check the device was worn during the time period. Some metrics need specific hardware.
 
