@@ -2,10 +2,10 @@
 
 The full notes for each release, with upgrade steps, are on the [releases page](https://github.com/rubengarciam/kai/releases). This is the short version. Versions follow [semantic versioning](https://semver.org/): a change that breaks documented commands, paths or Python requirements bumps the major version.
 
-## Unreleased
+## [2.3.0](https://github.com/rubengarciam/kai/releases/tag/v2.3.0) - 2026-09-29
 
-- **Tyre ledger helpers** ([#16](https://github.com/rubengarciam/kai/issues/16)): `tyres.py` adds wheelsets and fits, replaces and retires tyre sets, so the tyre ledger no longer needs hand-editing.
-- **Docs restructure:** the README is now a short front door; installation, per-agent setup, upgrading, features and architecture moved to `docs/`, contributing to `CONTRIBUTING.md`. Added this changelog and GitHub pull request and issue templates.
+- **Added: tyre ledger helpers** ([#16](https://github.com/rubengarciam/kai/issues/16)): `tyres.py` adds wheelsets and fits, replaces and retires tyre sets, so the tyre ledger no longer needs hand-editing.
+- **Docs restructure:** the README is now a short front door (381 → 123 lines); installation, per-agent setup, upgrading, features and architecture moved to `docs/`, contributing to `CONTRIBUTING.md`. Added this changelog and GitHub pull request and issue templates.
 
 ## [2.2.1](https://github.com/rubengarciam/kai/releases/tag/v2.2.1) - 2026-09-28
 
