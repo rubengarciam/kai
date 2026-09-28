@@ -1,0 +1,45 @@
+{
+  "_doc": "Example chain wax ledger. Copy to chain-wax.json (git-ignored) and edit, or let scripts/chain-wax.py create and update it. One entry per bike. odometer_km is the bike's lifetime distance (Strava gear distance, indoor rides included: a chain wears on the trainer too) at the moment of the wax. next_due_km is [min, max] km after that wax and is fixed when the wax is logged. Bikes with a strava_gear_id read their odometer live; bikes without one are manual (set with `chain-wax.py set-odometer`).",
+  "bikes": {
+    "road": {
+      "name": "Road bike",
+      "strava_gear_id": "b0000000",
+      "default_kind": "hot",
+      "waxes": [
+        {
+          "date": "2026-01-10",
+          "odometer_km": 1200.0,
+          "kind": "hot",
+          "product": "Example hot wax",
+          "degreased": true,
+          "next_due_km": [150, 250]
+        },
+        {
+          "date": "2026-02-05",
+          "odometer_km": 1390.5,
+          "kind": "hot",
+          "product": "Example hot wax",
+          "degreased": false,
+          "next_due_km": [450, 500]
+        }
+      ]
+    },
+    "partner_bike": {
+      "name": "Partner's bike (manually tracked)",
+      "strava_gear_id": null,
+      "default_kind": "hot",
+      "odometer_km": 85.0,
+      "odometer_date": "2026-03-01",
+      "waxes": [
+        {
+          "date": "2026-01-15",
+          "odometer_km": 40.0,
+          "kind": "hot",
+          "product": "Example hot wax",
+          "degreased": true,
+          "next_due_km": [450, 500]
+        }
+      ]
+    }
+  }
+}
