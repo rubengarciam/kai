@@ -13,7 +13,7 @@ This documents the unofficial Garmin Connect API accessed via the `garminconnect
 
 ### Library: `garminconnect`
 ```bash
-pip install garminconnect==0.2.38
+pip install "garminconnect>=0.3.16,<0.4"   # Python 3.12+
 ```
 
 ### Authentication Flow
@@ -26,18 +26,16 @@ pip install garminconnect==0.2.38
 ```python
 from garminconnect import Garmin
 
-# Initial login
-client = Garmin(email, password)
+# Initial login (prompt_mfa is called if the account uses two-factor authentication)
+client = Garmin(email, password, prompt_mfa=lambda: input("MFA code: "))
 client.login()
 
-# Save tokens for reuse
-oauth1 = client.garth.oauth1_token
-oauth2 = client.garth.oauth2_token
+# Save tokens for reuse: writes garmin_tokens.json (mode 600) inside the directory
+client.client.dump("~/.config/garminconnect")
 
-# Restore session
+# Restore session (loads and, if needed, refreshes the tokens; no password needed)
 client = Garmin()
-client.garth.oauth1_token = oauth1
-client.garth.oauth2_token = oauth2
+client.login(tokenstore="~/.config/garminconnect")
 ```
 
 ## Core Endpoints

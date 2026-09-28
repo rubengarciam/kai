@@ -14,12 +14,12 @@ Query health and training metrics from Garmin Connect. Works with any AI assista
 - Personal records from Garmin Connect
 - Activity lap splits
 - Interactive HTML dashboards (Chart.js)
-- Session tokens auto-refresh via garth (no repeated logins)
+- Session tokens auto-refresh (no repeated logins); your password is never stored
 
 ## Requirements
 
-- Python 3.10+
-- The Python packages in the Kai repo's `requirements.txt` (`garminconnect` 0.2.x, `fitparse`, `gpxpy`)
+- Python 3.12+
+- The Python packages in the Kai repo's `requirements.txt` (`garminconnect` 0.3.x, `fitparse`, `gpxpy`)
 - A Garmin Connect account
 
 ## Setup
@@ -32,20 +32,24 @@ From the Kai repo root, in a virtual environment (see the top-level README):
 .venv/bin/pip install -r requirements.txt
 ```
 
-Plain `pip3 install garminconnect` installs 0.3.x, which this skill does not support.
+On Python older than 3.12, use `uv` (see the top-level README).
 
 ### 2. Authenticate
 
 ```bash
-python3 scripts/garmin_auth.py login --email you@example.com --password yourpassword
+python3 scripts/garmin_auth.py login
+# Garmin email: you@example.com
+# Garmin password for you@example.com:   (hidden)
 # 🔐 Logging in as you@example.com...
-# ✅ Tokens saved to /home/user/.config/garminconnect
+# ✅ Tokens saved to /home/user/.config/garminconnect/garmin_tokens.json
 # ✅ Login successful! User: YourName
 ```
 
 Tokens are stored at `~/.config/garminconnect/` and auto-refresh. You should only need to run this once unless your session expires.
 
-Alternatively, set `GARMIN_EMAIL` and `GARMIN_PASSWORD` as environment variables and omit the flags.
+The password is asked for on the terminal and is never written to disk. Run this yourself in a terminal. Alternatives: `--email you@example.com` or `GARMIN_EMAIL` to skip the email prompt, and `--password-stdin` or `GARMIN_PASSWORD` for scripting. There is deliberately no `--password` flag: a password on the command line ends up in shell history and the process list. If your account uses two-factor authentication you'll be asked for the code.
+
+**Upgrading from an older version:** tokens saved by garminconnect 0.2.x can't be used any more. Run `login` once.
 
 ### 3. Check auth status
 
@@ -56,8 +60,9 @@ python3 scripts/garmin_auth.py status
 ## Credentials
 
 Stored at `~/.config/garminconnect/`:
-- `config.json` — keys: `email`, `password` (optional; env vars also accepted)
-- Token files managed by garth (auto-refresh)
+- `garmin_tokens.json` — session tokens (mode 600, in a 700 directory; auto-refresh)
+- `config.json` — optional, key `email` only. A `password` key is ignored, with a warning
+- `GARMIN_TOKEN_DIR` — optional, keep the tokens somewhere else
 
 ## Scripts
 
@@ -188,7 +193,7 @@ Trained athletes typically range 40–55 bpm. Sudden increases suggest fatigue, 
 - All dates: `YYYY-MM-DD`
 - Some metrics require specific devices (Body Battery needs an HRV-capable watch)
 - Garmin rate-limits API requests — if data is missing, wait a few minutes and retry
-- `GARMIN_EMAIL` and `GARMIN_PASSWORD` env vars override `config.json`
+- `GARMIN_EMAIL` overrides `config.json`; `GARMIN_PASSWORD` is used instead of the prompt when set
 
 ## Troubleshooting
 
@@ -196,7 +201,9 @@ Trained athletes typically range 40–55 bpm. Sudden increases suggest fatigue, 
 
 **Missing data**: Check the device was worn during the time period. Some metrics need specific hardware.
 
-**Library errors**: this skill needs `garminconnect` 0.2.x (it uses `client.garth`). Reinstall the pinned version with `pip install -r requirements.txt` from the Kai repo root. Do not upgrade to 0.3.x.
+**Library errors**: this skill needs `garminconnect` 0.3.x and Python 3.12+. Reinstall with `pip install -r requirements.txt` from the Kai repo root.
+
+**Rate limited on login**: Garmin blocks repeated logins from one connection. Wait an hour before trying again.
 
 ## Links
 

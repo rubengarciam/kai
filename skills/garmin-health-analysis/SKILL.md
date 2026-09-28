@@ -4,7 +4,7 @@ description: Talk to your Garmin data naturally - "what was my fastest speed sno
 version: 1.2.2
 author: EversonL & Claude
 homepage: https://github.com/eversonl/ClawdBot-garmin-health-analysis
-metadata: {"clawdbot":{"emoji":"⌚","requires":{"env":["GARMIN_EMAIL","GARMIN_PASSWORD"]},"install":[{"id":"garminconnect","kind":"python","package":"garminconnect","label":"Install garminconnect (pip)"},{"id":"fitparse","kind":"python","package":"fitparse","label":"Install fitparse (pip)"},{"id":"gpxpy","kind":"python","package":"gpxpy","label":"Install gpxpy (pip)"}]}}
+metadata: {"clawdbot":{"emoji":"⌚","install":[{"id":"garminconnect","kind":"python","package":"garminconnect>=0.3.16,<0.4","label":"Install garminconnect (pip)"},{"id":"fitparse","kind":"python","package":"fitparse","label":"Install fitparse (pip)"},{"id":"gpxpy","kind":"python","package":"gpxpy","label":"Install gpxpy (pip)"}]}}
 ---
 
 # Garmin Health Analysis
@@ -14,14 +14,15 @@ Query health metrics from Garmin Connect and generate interactive HTML charts.
 ## Credentials
 
 Stored at `~/.config/garminconnect/`:
-- `config.json` — keys: `email`, `password` (optional; env vars also accepted)
-- Token files managed by garth (auto-refresh)
+- `garmin_tokens.json` — session tokens (mode 600, auto-refresh). Only tokens are stored, never your password
+- `config.json` — optional, key `email` only. A `password` key is ignored
+- Set `GARMIN_TOKEN_DIR` to keep tokens somewhere else
 
 Auth status: `python3 {baseDir}/scripts/garmin_auth.py status`
 
 Re-authenticate if tokens expire:
 ```bash
-python3 {baseDir}/scripts/garmin_auth.py login --email EMAIL --password PASSWORD
+python3 {baseDir}/scripts/garmin_auth.py login
 ```
 
 ---
@@ -188,4 +189,6 @@ Trained athletes typically range 40–55 bpm. Sudden increases suggest fatigue, 
 - **401/auth error**: Run `garmin_auth.py login` again
 - **Rate limited**: Garmin rate-limits; wait a few minutes
 - **Missing data**: Some metrics need specific Garmin devices (Body Battery requires HRV-capable watch)
-- **Library errors**: this skill needs `garminconnect` 0.2.x (it uses `client.garth`). Reinstall the pinned version with `pip install -r requirements.txt` from the Kai repo root. Do not upgrade to 0.3.x.
+- **Library errors**: this skill needs `garminconnect` 0.3.x and Python 3.12+. Reinstall with `pip install -r requirements.txt` from the Kai repo root.
+
+**"Tokens from an older version"**: after upgrading from v1.x, run the login command once. The old tokens can't be reused.

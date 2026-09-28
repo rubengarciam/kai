@@ -1,5 +1,5 @@
-# Garmin skill dependencies. garminconnect is pinned to the 0.2.x line: the scripts
-# use client.garth (login token storage), which was removed in 0.3.x.
-garminconnect==0.2.38
+# Garmin skill dependencies (Python 3.12 or newer).
+# garminconnect 0.3.x replaced the old garth login with its own token store; the 0.2.x line is not supported.
+garminconnect>=0.3.16,<0.4
 fitparse>=1.2.0
 gpxpy>=1.6.0

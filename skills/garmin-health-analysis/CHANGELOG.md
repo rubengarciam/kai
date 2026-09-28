@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased (Kai repo)
+
+### Breaking
+- Requires `garminconnect` 0.3.x and Python 3.12+ (was 0.2.x / garth). Tokens from older versions can't be reused: run `garmin_auth.py login` once.
+- `garmin_auth.py login --password` removed, and passwords are no longer read from `config.json`.
+
+### Added
+- Login prompts for the password (hidden) and the MFA code on the terminal; `--password-stdin` and `GARMIN_PASSWORD` for scripting; clear message when there is no terminal.
+- `GARMIN_TOKEN_DIR` to keep tokens elsewhere.
+- `status` recognises tokens from older versions and says to log in again.
+
 ## v1.2.2 (2026-01-26)
 
 ### 🧹 Repository Cleanup & Focus
