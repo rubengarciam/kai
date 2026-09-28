@@ -24,7 +24,7 @@ cd garmin-health-mcp-server
 
 # Install and setup
 npm install
-pip3 install garminconnect fitparse gpxpy
+pip install -r requirements.txt   # from the Kai repo root; pins garminconnect==0.2.38
 cp .env.example .env
 # Edit .env with your credentials
 

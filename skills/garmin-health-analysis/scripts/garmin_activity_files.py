@@ -54,7 +54,7 @@ def download_activity_file(client, activity_id, file_format="fit", output_dir="/
 def parse_fit_file(file_path):
     """Parse FIT file and extract all data points."""
     if not HAS_FITPARSE:
-        return {"error": "fitparse library not installed. Run: pip install fitparse"}
+        return {"error": "fitparse library not installed. Run: pip install -r requirements.txt in the Kai repo root"}
     
     try:
         fitfile = fitparse.FitFile(file_path)
@@ -102,7 +102,7 @@ def parse_fit_file(file_path):
 def parse_gpx_file(file_path):
     """Parse GPX file and extract track points."""
     if not HAS_GPXPY:
-        return {"error": "gpxpy library not installed. Run: pip install gpxpy"}
+        return {"error": "gpxpy library not installed. Run: pip install -r requirements.txt in the Kai repo root"}
     
     try:
         with open(file_path, 'r') as f:

@@ -185,7 +185,7 @@ python3 scripts/garmin_activity_files.py analyze --file /tmp/activity_12345678.f
 ## 📦 Dependencies
 
 ```bash
-pip3 install garminconnect fitparse gpxpy
+pip install -r requirements.txt   # from the Kai repo root; pins garminconnect==0.2.38
 ```
 
 - **garminconnect**: Garmin Connect API wrapper

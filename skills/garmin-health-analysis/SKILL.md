@@ -188,4 +188,4 @@ Trained athletes typically range 40–55 bpm. Sudden increases suggest fatigue, 
 - **401/auth error**: Run `garmin_auth.py login` again
 - **Rate limited**: Garmin rate-limits; wait a few minutes
 - **Missing data**: Some metrics need specific Garmin devices (Body Battery requires HRV-capable watch)
-- **Library outdated**: `pip3 install --upgrade garminconnect`
+- **Library errors**: this skill needs `garminconnect` 0.2.x (it uses `client.garth`). Reinstall the pinned version with `pip install -r requirements.txt` from the Kai repo root. Do not upgrade to 0.3.x.

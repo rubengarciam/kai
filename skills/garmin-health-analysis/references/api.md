@@ -13,7 +13,7 @@ This documents the unofficial Garmin Connect API accessed via the `garminconnect
 
 ### Library: `garminconnect`
 ```bash
-pip3 install garminconnect
+pip install garminconnect==0.2.38
 ```
 
 ### Authentication Flow

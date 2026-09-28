@@ -69,11 +69,30 @@ Data priority when sources overlap: TrainingPeaks for load, Garmin for recovery,
 
 Memory is plain markdown in `memory/`, so it survives model or runtime changes and you can read or edit it yourself.
 
+## Requirements
+
+Kai runs on **Linux or macOS** (on Windows, use WSL). Verified on Raspberry Pi OS (Debian) with Python 3.13; the package pins need Python 3.10+.
+
+| Requirement | Version | Needed for | How to get it |
+| ----------- | ------- | ---------- | ------------- |
+| Agent runtime | [OpenClaw](https://docs.openclaw.ai) (needs Node.js 24.16+ or 26.1+, which its installer sets up) or [Hermes Agent](https://hermes-agent.nousresearch.com) | Everything | Follow the runtime's install guide |
+| `git` | any | Cloning this repo | `sudo apt install git` / `brew install git` |
+| `python3` | **3.10 or newer** | Garmin and TrainingPeaks skills | Check with `python3 --version` |
+| `python3-venv` | matches Python | Isolating the Garmin packages | Debian/Ubuntu/Raspberry Pi OS: `sudo apt install python3-venv`. macOS: included with Python |
+| `curl` and `bash` | any | Strava skill | Preinstalled on Linux and macOS |
+| Python packages | `garminconnect==0.2.38`, `fitparse`, `gpxpy` (pinned in `requirements.txt`) | Garmin skill only | See "Install the Python packages" below |
+| Internet access | | All data sources; Garmin dashboards also load Chart.js from a CDN | |
+| Accounts | at least one of TrainingPeaks, Garmin Connect, Strava | Data | You may skip any you don't use |
+
+The TrainingPeaks skill uses only the Python standard library, and the Strava skill only needs `curl` and Python. **Only Garmin needs extra packages.**
+
+> **Pin, don't upgrade:** the Garmin scripts need `garminconnect` 0.2.x. A plain `pip install garminconnect` now installs 0.3.x, which needs Python 3.12+ and removed the login-token API these scripts use, so the Garmin skill breaks. Always install from `requirements.txt`.
+
 ## Setup
 
 These steps are for OpenClaw. For Hermes, see [Using Kai with Hermes](#using-kai-with-hermes).
 
-**You need:** a working [OpenClaw](https://docs.openclaw.ai) install, Python 3, and an account on at least one of TrainingPeaks, Garmin Connect or Strava.
+Check the [requirements](#requirements) first.
 
 ### 1. Get the workspace (OpenClaw)
 
@@ -94,19 +113,38 @@ cp templates/MEMORY.md MEMORY.md
 
 Fill in `USER.md` (thresholds, goals, race calendar, injuries, whether you have a coach). Or skip this and say hello: on first contact Kai interviews you and writes it for you.
 
-### 3. Connect your data sources
+### 3. Install the Python packages (Garmin only)
+
+Skip this if you don't use Garmin. Create a virtual environment inside the Kai folder and install the pinned packages:
+
+```bash
+cd ~/.openclaw/workspace-kai
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+```
+
+If `python3 -m venv` fails with "ensurepip is not available", run `sudo apt install python3-venv` and retry. Kai's `AGENTS.md` tells the agent to run the Garmin scripts with `.venv/bin/python3` when the folder exists. Use the same interpreter when you run them yourself, for example:
+
+```bash
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py login --email you@example.com --password 'your-password'
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py status
+```
+
+If your Garmin account uses two-factor authentication, run the login command in a terminal: it will ask for the code.
+
+### 4. Connect your data sources
 
 Each skill has its own setup guide. Credentials are stored on your machine under `~/.config/<service>/`.
 
 | Source | What you need | Guide |
 | ------ | ------------- | ----- |
 | TrainingPeaks | Your `Production_tpAuth` browser cookie (no API key) | [skills/trainingpeaks](skills/trainingpeaks/README.md) |
-| Garmin Connect | `pip3 install garminconnect fitparse gpxpy`, then a one-time login | [skills/garmin-health-analysis](skills/garmin-health-analysis/README.md) |
+| Garmin Connect | The packages from step 3, then a one-time login (`garmin_auth.py login`, shown above) | [skills/garmin-health-analysis](skills/garmin-health-analysis/README.md) |
 | Strava | A free Strava API app (client ID and secret) and one OAuth authorization | [skills/strava](skills/strava/README.md) |
 
 Optional gear tracking: `cp skills/strava/data/tyres.example.json skills/strava/data/tyres.json` and edit it.
 
-### 4. Start talking
+### 5. Start talking
 
 Example prompts:
 
@@ -135,10 +173,13 @@ cd ~/kai
 cp templates/USER.md USER.md
 cp templates/MEMORY.md MEMORY.md
 
-# 3. Give Kai its personality (Hermes only reads SOUL.md from its home directory)
+# 3. Garmin only: install the pinned Python packages (see Requirements)
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+
+# 4. Give Kai its personality (Hermes only reads SOUL.md from its home directory)
 cp SOUL.md ~/.hermes/SOUL.md     # or $HERMES_HOME/SOUL.md
 
-# 4. Start Hermes from this folder so it picks up AGENTS.md
+# 5. Start Hermes from this folder so it picks up AGENTS.md
 hermes
 ```
 
@@ -159,6 +200,7 @@ SOUL.md            Personality and boundaries
 IDENTITY.md        Name and vibe
 SECURITY.md        Hard rules on credentials
 templates/         Starter USER.md and MEMORY.md
+requirements.txt   Pinned Python packages for the Garmin skill
 data/              Example nutrition log
 skills/
   endurance-training-coach/   Plan creation: assessment, zones, load, periodization, workouts, race day

@@ -17,7 +17,7 @@ from garmin_auth import get_client
 try:
     from garminconnect import Garmin
 except ImportError:
-    print('{"error": "garminconnect not installed. Run: pip3 install garminconnect"}', file=sys.stderr)
+    print('{"error": "garminconnect not installed. Run: pip install -r requirements.txt in the Kai repo root"}', file=sys.stderr)
     sys.exit(1)
 
 

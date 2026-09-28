@@ -18,17 +18,21 @@ Query health and training metrics from Garmin Connect. Works with any AI assista
 
 ## Requirements
 
-- Python 3.7+
-- `pip3 install garminconnect fitparse gpxpy`
+- Python 3.10+
+- The Python packages in the Kai repo's `requirements.txt` (`garminconnect` 0.2.x, `fitparse`, `gpxpy`)
 - A Garmin Connect account
 
 ## Setup
 
 ### 1. Install dependencies
 
+From the Kai repo root, in a virtual environment (see the top-level README):
+
 ```bash
-pip3 install garminconnect fitparse gpxpy
+.venv/bin/pip install -r requirements.txt
 ```
+
+Plain `pip3 install garminconnect` installs 0.3.x, which this skill does not support.
 
 ### 2. Authenticate
 
@@ -192,7 +196,7 @@ Trained athletes typically range 40–55 bpm. Sudden increases suggest fatigue, 
 
 **Missing data**: Check the device was worn during the time period. Some metrics need specific hardware.
 
-**Library outdated**: `pip3 install --upgrade garminconnect`
+**Library errors**: this skill needs `garminconnect` 0.2.x (it uses `client.garth`). Reinstall the pinned version with `pip install -r requirements.txt` from the Kai repo root. Do not upgrade to 0.3.x.
 
 ## Links
 

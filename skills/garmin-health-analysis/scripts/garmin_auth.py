@@ -15,7 +15,7 @@ try:
     from garminconnect import Garmin, GarminConnectAuthenticationError, GarminConnectConnectionError
 except ImportError:
     print("❌ garminconnect library not installed", file=sys.stderr)
-    print("Install with: pip3 install garminconnect", file=sys.stderr)
+    print("Install with: pip install -r requirements.txt (in the Kai repo root)", file=sys.stderr)
     sys.exit(1)
 
 CONFIG_DIR = Path.home() / ".config" / "garminconnect"
