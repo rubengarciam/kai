@@ -34,6 +34,18 @@ done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LEDGER="$SCRIPT_DIR/../data/tyres.json"
+# Before v2.2 the ledger lived in the Strava skill; still honoured (with a notice) if it is the only one
+LEGACY_LEDGER="$SCRIPT_DIR/../../strava/data/tyres.json"
+if [ ! -f "$LEDGER" ] && [ -f "$LEGACY_LEDGER" ]; then
+  echo "Note: using the tyre ledger at its old location $LEGACY_LEDGER." >&2
+  echo "      Move it to $LEDGER (tyre tracking now lives in skills/gear-maintenance)." >&2
+  LEDGER="$LEGACY_LEDGER"
+fi
+if [ ! -f "$LEDGER" ]; then
+  echo "Error: no tyre ledger at $LEDGER." >&2
+  echo "Copy $SCRIPT_DIR/../data/tyres.example.json to tyres.json and edit it." >&2
+  exit 1
+fi
 
 python3 - "$LEDGER" "$JSON" "$VERBOSE" <<'PYEOF'
 import json, os, sys, urllib.request, urllib.error
@@ -51,7 +63,7 @@ if not token:
         with open(creds_path) as f:
             token = json.load(f).get("STRAVA_ACCESS_TOKEN")
 if not token:
-    print("Error: STRAVA_ACCESS_TOKEN not set. Run: bash refresh_token.sh", file=sys.stderr)
+    print("Error: STRAVA_ACCESS_TOKEN not set. Run: bash skills/strava/scripts/refresh_token.sh", file=sys.stderr)
     sys.exit(1)
 
 with open(ledger_path) as f:

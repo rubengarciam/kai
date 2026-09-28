@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Chain wax log and km-since-wax report.
 
-Keeps one ledger of chain waxes per bike (skills/strava/data/chain-wax.json) and works out, from the
+Keeps one ledger of chain waxes per bike (skills/gear-maintenance/data/chain-wax.json) and works out, from the
 bike's live Strava odometer, how far each chain has run since its last wax and when the next wax is due.
 
 Usage:
@@ -24,7 +24,7 @@ How it works
       OVERDUE    past `max`
 
 Strava credentials come from STRAVA_ACCESS_TOKEN or ~/.config/strava/credentials.json
-(run scripts/refresh_token.sh if a call returns 401).
+(run skills/strava/scripts/refresh_token.sh if a call returns 401).
 
 Exit codes: 0 ok, 1 error (bad input, ledger problem), 2 report printed but an odometer was unavailable.
 """
@@ -41,6 +41,8 @@ from datetime import date, datetime
 from pathlib import Path
 
 DEFAULT_LEDGER = Path(__file__).resolve().parent.parent / "data" / "chain-wax.json"
+# Before v2.2 the ledger lived in the Strava skill; still honoured (with a notice) if it is the only one
+LEGACY_LEDGER = Path(__file__).resolve().parent.parent.parent / "strava" / "data" / "chain-wax.json"
 SOON_FRACTION = 0.10   # DUE SOON = within the last 10% before the minimum
 STALE_DAYS = 30        # a manual odometer reading older than this is flagged
 INTERVALS = {          # (min, max) km after a wax, by kind and whether it is the bike's first wax
@@ -61,7 +63,14 @@ class OdometerUnavailable(ChainWaxError):
 # ---------------------------------------------------------------- ledger
 
 def ledger_path(arg):
-    return Path(arg or os.environ.get("CHAIN_WAX_LEDGER") or DEFAULT_LEDGER).expanduser()
+    explicit = arg or os.environ.get("CHAIN_WAX_LEDGER")
+    if explicit:
+        return Path(explicit).expanduser()
+    if not DEFAULT_LEDGER.exists() and LEGACY_LEDGER.exists():
+        print(f"Note: using the ledger at its old location {LEGACY_LEDGER}. "
+              f"Move it to {DEFAULT_LEDGER} (the chain wax log now lives in skills/gear-maintenance).", file=sys.stderr)
+        return LEGACY_LEDGER
+    return DEFAULT_LEDGER
 
 
 def load_ledger(path):
@@ -114,7 +123,7 @@ def strava_token():
         if creds.exists():
             token = json.loads(creds.read_text()).get("STRAVA_ACCESS_TOKEN")
     if not token:
-        raise OdometerUnavailable("STRAVA_ACCESS_TOKEN not set (run scripts/refresh_token.sh)")
+        raise OdometerUnavailable("STRAVA_ACCESS_TOKEN not set (run skills/strava/scripts/refresh_token.sh)")
     return token
 
 
@@ -126,7 +135,7 @@ def fetch_gear_km(gear_id):
         with urllib.request.urlopen(req, timeout=30) as resp:
             return json.loads(resp.read())["distance"] / 1000.0
     except urllib.error.HTTPError as e:
-        hint = " (token expired: run scripts/refresh_token.sh)" if e.code == 401 else ""
+        hint = " (token expired: run skills/strava/scripts/refresh_token.sh)" if e.code == 401 else ""
         raise OdometerUnavailable(f"Strava returned HTTP {e.code} for gear {gear_id}{hint}")
     except (urllib.error.URLError, TimeoutError, KeyError, ValueError) as e:
         raise OdometerUnavailable(f"could not read gear {gear_id} from Strava: {e}")
@@ -371,7 +380,7 @@ def build_parser():
     ab = sub.add_parser("add-bike", help="add a bike to the ledger (creates the ledger if needed)")
     ab.add_argument("bike", help="short id, e.g. road")
     ab.add_argument("--name", required=True)
-    ab.add_argument("--gear-id", help="Strava bike id (starts with b); see scripts/gear-mileage.sh")
+    ab.add_argument("--gear-id", help="Strava bike id (starts with b); see skills/strava/scripts/gear-mileage.sh")
     ab.add_argument("--manual", action="store_true", help="track the odometer by hand instead of via Strava")
     ab.add_argument("--odometer", type=float, help="current odometer for a manual bike")
     ab.add_argument("--kind", choices=sorted(INTERVALS), default="hot")

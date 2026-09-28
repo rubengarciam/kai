@@ -5,6 +5,9 @@
 /HEARTBEAT.md
 /memory/
 /data/nutrition-log.csv
+/skills/gear-maintenance/data/tyres.json
+/skills/gear-maintenance/data/chain-wax.json
+# legacy locations (before v2.2), so an old ledger is never committed
 /skills/strava/data/tyres.json
 /skills/strava/data/chain-wax.json
 /.env
