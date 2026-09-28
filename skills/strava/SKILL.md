@@ -23,7 +23,7 @@ Two options (in priority order):
 
 Access tokens expire every 6 hours. Refresh:
 ```bash
-bash {baseDir}/scripts/refresh_token.sh
+bash skills/strava/scripts/refresh_token.sh
 ```
 
 If a script returns a 401 error, run this first.
@@ -33,9 +33,9 @@ If a script returns a 401 error, run this first.
 ### `activities.sh` — Recent Activities
 
 ```bash
-bash {baseDir}/scripts/activities.sh              # last 14 days
-bash {baseDir}/scripts/activities.sh --days 30
-bash {baseDir}/scripts/activities.sh --days 7 --count 20
+bash skills/strava/scripts/activities.sh              # last 14 days
+bash skills/strava/scripts/activities.sh --days 30
+bash skills/strava/scripts/activities.sh --days 7 --count 20
 ```
 
 Output: date, sport type, name, distance, time, elevation, avg HR.
@@ -43,8 +43,8 @@ Output: date, sport type, name, distance, time, elevation, avg HR.
 ### `gear-mileage.sh` — Bike & Shoe Mileage
 
 ```bash
-bash {baseDir}/scripts/gear-mileage.sh            # scans 250 activities
-bash {baseDir}/scripts/gear-mileage.sh --pages 10 # scan further back
+bash skills/strava/scripts/gear-mileage.sh            # scans 250 activities
+bash skills/strava/scripts/gear-mileage.sh --pages 10 # scan further back
 ```
 
 Returns lifetime distance for all bikes (gear_id starts with `b`) and shoes (gear_id starts with `g`) in separate sections. Discovers gear via activity `gear_id` fields — requires `activity:read_all` scope only.
@@ -52,7 +52,7 @@ Returns lifetime distance for all bikes (gear_id starts with `b`) and shoes (gea
 ### `shoe-mileage.sh` — Shoes Only (legacy)
 
 ```bash
-bash {baseDir}/scripts/shoe-mileage.sh            # scans 250 activities
+bash skills/strava/scripts/shoe-mileage.sh            # scans 250 activities
 ```
 
 Shoes only. Use `gear-mileage.sh` for both bikes and shoes.
@@ -60,7 +60,7 @@ Shoes only. Use `gear-mileage.sh` for both bikes and shoes.
 ### `athlete-stats.sh` — All-Time Totals
 
 ```bash
-bash {baseDir}/scripts/athlete-stats.sh
+bash skills/strava/scripts/athlete-stats.sh
 ```
 
 Returns cumulative all-time and YTD totals for Run, Ride, Swim (activity count, distance, time, elevation).

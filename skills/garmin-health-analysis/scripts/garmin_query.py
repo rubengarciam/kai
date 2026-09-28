@@ -219,7 +219,7 @@ def main():
     
     client = get_client()
     if not client:
-        print('{"error": "Not authenticated"}')
+        print('{"error": "Not authenticated. Ask the account owner to run this in their own terminal: .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py login"}')
         sys.exit(1)
     
     if args.metric == "heart_rate":

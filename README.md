@@ -272,7 +272,6 @@ Notes:
 - **Start the tool from the repo folder.** Both load instructions and skills relative to the working directory. Kai's `AGENTS.md` tells the agent to read `SOUL.md`, `USER.md` and its memory files itself, so nothing else needs installing.
 - **Tested with Claude Code only.** In a scratch copy of the repo, Claude Code picked up `AGENTS.md` through `CLAUDE.md`, took on the Kai role, and listed all four skills. Codex is based on its documentation (it reads `AGENTS.md` and scans `.agents/skills/`) and hasn't been run against this repo.
 - **Symlinks need Linux or macOS** (or WSL on Windows). If your checkout has no symlinks, the skills still work: `AGENTS.md` refers to them by their `skills/` paths.
-- **`{baseDir}` in the skill docs** is an OpenClaw placeholder for "this skill's folder". Claude Code and Codex don't substitute it, so the agent resolves it to `skills/<name>` on its own. If it stumbles, tell it so.
 - **What you don't get:** these are terminal coding tools, so you chat with Kai in the terminal. Heartbeat checks, push notifications and chat-app delivery are OpenClaw features. Memory still works, because it's plain files.
 - **Permissions:** Kai runs scripts and writes files (`USER.md`, `memory/`), so the tool will ask you to approve those actions unless you've configured it otherwise.
 
@@ -303,7 +302,6 @@ Notes:
 
 - **Run Hermes from the repo folder.** Hermes loads `AGENTS.md` from the working directory. Kai's instructions and the `skills/...` paths in them are relative to that folder. If you'd rather keep Kai separate from your other Hermes use, create a dedicated profile with `hermes profile create kai` and copy `SOUL.md` into that profile's home.
 - **Skills work in place.** Kai's `AGENTS.md` tells the agent to run the scripts under `skills/`, so nothing has to be installed. If you also want them as slash commands (`/strava`, `/trainingpeaks` and so on), copy or symlink the four folders in `skills/` into `~/.hermes/skills/`, or add the repo's `skills/` folder as an external skill directory (see the Hermes docs).
-- **Skill docs mention `{baseDir}`.** That placeholder is an OpenClaw convention meaning "this skill's folder". If Hermes doesn't substitute it, tell Kai the skills live in `./skills/<name>`, or use the paths shown in `AGENTS.md`.
 - **Memory.** Kai's own memory (`USER.md`, `MEMORY.md`, `memory/`) is plain files in the repo and is read and written through Hermes's file tools. Hermes also has its own built-in memory, and the two will coexist. To keep things simple, tell Kai to keep athlete details in `USER.md` and `memory/`.
 - **Credentials** are set up per skill, exactly as in the OpenClaw steps above. They live in `~/.config/<service>/`, independent of the agent runtime.
 - **OpenClaw-only bits** (the `openclaw agents add` command, heartbeat polling and push-notification delivery) don't apply. Use Hermes's own scheduler if you want proactive checks.

@@ -495,7 +495,7 @@ def main():
     # Get authenticated client
     client = get_client()
     if not client:
-        print("❌ Not authenticated. Run: python3 scripts/garmin_auth.py login", file=sys.stderr)
+        print("❌ Not authenticated. Ask the account owner to run this in their own terminal: .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py login", file=sys.stderr)
         sys.exit(1)
     
     print(f"📊 Fetching {args.days} days of data...", file=sys.stderr)
