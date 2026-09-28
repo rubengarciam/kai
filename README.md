@@ -16,7 +16,7 @@ Kai is a folder of plain markdown instructions plus four skills, using two open 
 | **Training plans** | Periodized plans (base, build, peak, taper) with zones, paces, workouts and a race-day plan, validated with you first | Any one data source, or just a chat |
 | **Analyst mode** | Interprets data and preps questions for your human coach; never overrides the plan | Any data source |
 | **Gear tracking** | Live shoe and bike mileage, per-wheelset tyre wear, replacement and maintenance alerts | Strava |
-| **Chain wax log** | Wax dates and odometer per bike, km since last wax, next-due alerts (early first re-wax, then a full interval) | Strava for mileage; log kept in memory |
+| **Chain wax log** | A ledger of waxes per bike, km since last wax, and DUE SOON / DUE / OVERDUE alerts (early first re-wax, then a full interval) | Strava for odometers; manual bikes supported |
 | **Nutrition and weight** | Log food and weight in chat; deficits paced to training load; checks tomorrow's session first | Optional; weight syncs to TrainingPeaks |
 | **Race notes** | Race-specific pacing, fueling and taper plans saved for later chats | Nothing |
 | **Proactive checks** | Watches for bad recovery trends, upcoming key sessions and gear thresholds | A runtime with heartbeats or scheduling |
@@ -48,7 +48,7 @@ If you have a human coach, tell Kai in `USER.md`. It switches to analyst mode: i
 
 ### Optional extras
 - **Gear tracking**: live shoe and bike mileage from Strava, tyre wear per wheelset, replacement and maintenance alerts.
-- **Chain wax log**: Kai keeps a wax log per bike (date, odometer, product) and works out km since the last wax from live Strava mileage. It suggests re-waxing early the first time, then at a full interval (about 450-500 km for hot wax, 200-300 km for drip wax), and warns you when a bike is close. Bikes without Strava tracking, like a partner's, can be logged by hand.
+- **Chain wax log**: `skills/strava/scripts/chain-wax.py` keeps a ledger of waxes per bike (date, odometer, product, whether the chain was degreased) and reads live odometers from Strava. `report` shows km since the last wax and the next-due odometer, and flags `DUE SOON` (last 10% before the minimum), `DUE` and `OVERDUE`. By default a hot wax is followed by an early re-wax at 150-250 km (the first coating is thin), then 450-500 km; drip lube is 200-300 km; you can set any interval. Bikes without Strava tracking, like a partner's, work too: you give their odometer by hand and the report tells you when the reading is getting old. Kai runs the script instead of doing the arithmetic, so the answer is the same every session.
 - **Nutrition and weight tracking**: log food and weight in plain chat. Weight goes to TrainingPeaks, food to a local CSV. Kai tracks kcal and protein, paces deficits to your training load, and checks tomorrow's session before recommending a low-carb day.
 - **Race notes**: race-specific tactics, pacing and taper plans are saved to memory so they're available in any later chat.
 - **Proactive checks**: with heartbeats enabled, Kai can watch for things like a recovery trend turning bad or a gear threshold approaching.
@@ -301,7 +301,7 @@ skills/
 
 - Your credentials and data stay on your machine. Nothing is sent anywhere except the calls to TrainingPeaks / Garmin / Strava and to the language model your agent runtime is configured with. That model provider will see the training data Kai reads.
 - Kai never stores your Garmin password. `login` asks for it on the terminal, uses it once, and keeps only the session tokens (`garmin_tokens.json`, readable by you alone). There is no `--password` flag, so the password can't end up in shell history, and Kai's instructions tell the agent never to ask for it in chat.
-- `.gitignore` excludes `USER.md`, `MEMORY.md`, `memory/`, your nutrition log and your tyre ledger, so you won't accidentally push your own data if you fork this.
+- `.gitignore` excludes `USER.md`, `MEMORY.md`, `memory/`, your nutrition log, your tyre ledger and your chain wax ledger, so you won't accidentally push your own data if you fork this.
 - TrainingPeaks and Garmin access use unofficial, reverse-engineered interfaces (cookie auth and the community `garminconnect` library). They can break or be rate-limited, and their terms may not endorse this use. Strava uses the official API.
 
 ## Customizing

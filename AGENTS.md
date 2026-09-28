@@ -155,13 +155,22 @@ If the athlete wants gear tracking:
 
 ### Chain wax log
 
-Chain waxing has no script: you keep the log in `memory/project_equipment.md`, one entry per bike, and derive "km since last wax" from live Strava bike mileage.
+Use the script; don't do the arithmetic yourself: `python3 skills/strava/scripts/chain-wax.py` (Python standard library only). It reads live bike odometers from Strava, so it needs the Strava credentials (if it says the token expired, run `bash skills/strava/scripts/refresh_token.sh` and retry). The ledger is `skills/strava/data/chain-wax.json` (personal data, git-ignored; `add-bike` creates it, `chain-wax.example.json` shows the format). Never hand-edit the ledger.
 
-- Per bike, record: date and bike odometer (km) of each wax, the product, and the next-due odometer range. Note when the chain and cassette were last fully degreased.
-- Intervals to start from: hot wax about 450-500 km between re-waxes; drip or wax-on lube about 200-300 km. Re-wax **early the first time** (roughly 150-250 km after the first wax), because the first coating is thin. Also check after long or wet rides.
-- Whenever you pull bike mileage, compute km since the last wax for each bike, flag anything within about 10% of its due range, and say which bike it is. Never carry the km-since-wax figure as a stored number, only the wax odometer.
-- The athlete tells you when they wax. Log it (date, odometer, product) and recompute the next-due range.
-- Bikes without Strava tracking (a partner's bike, say) are tracked manually: record the odometer the athlete gives you and update it whenever they re-wax.
+```bash
+python3 skills/strava/scripts/chain-wax.py report [--json]         # km since last wax and next due, per bike
+python3 skills/strava/scripts/chain-wax.py log BIKE [--odometer KM] [--date YYYY-MM-DD] [--product TEXT] [--kind hot|drip] [--interval MIN-MAX] [--degreased]
+python3 skills/strava/scripts/chain-wax.py set-odometer BIKE KM    # manually tracked bikes only
+python3 skills/strava/scripts/chain-wax.py add-bike ID --name TEXT (--gear-id bXXXX | --manual [--odometer KM])
+```
+
+- **Whenever you pull bike mileage, or the athlete asks about the chain or maintenance, run `report`** and relay the result, naming the bike. Statuses: `OK`; `DUE SOON` = within the last 10% before the minimum of the due range; `DUE` = between the minimum and maximum; `OVERDUE` = past the maximum. Mention anything that isn't `OK`.
+- **When the athlete says they waxed:** run `log BIKE`. It uses the live odometer by default. For a past date, or for a manual bike, you must pass `--odometer`. Add `--product` if they named one and `--degreased` if the chain was fully degreased first. Read the printed next-due range back to them.
+- **Due ranges are fixed when a wax is logged.** Defaults: hot wax = early first re-wax at 150-250 km (the first coating is thin), then 450-500 km; drip or wax-on lube = 200-300 km. If the athlete has their own interval for a bike, pass `--interval MIN-MAX`.
+- **The odometer includes indoor rides**, since a chain wears on the trainer too.
+- **Manual bikes** (a partner's bike, say): ask the athlete for the odometer and record it with `set-odometer` or `log --odometer`. `report` flags readings older than 30 days; ask for a fresh one.
+- Exit code 2 means a Strava odometer couldn't be read: report the bikes you do have and say which one failed. If the script says the ledger is corrupt, tell the athlete; don't overwrite it.
+- Product preferences and other notes belong in `memory/project_equipment.md`, not in the ledger.
 
 ## Nutrition and Weight (optional)
 
