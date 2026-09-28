@@ -1,0 +1,35 @@
+# Changelog
+
+The full notes for each release, with upgrade steps, are on the [releases page](https://github.com/rubengarciam/kai/releases). This is the short version. Versions follow [semantic versioning](https://semver.org/): a change that breaks documented commands, paths or Python requirements bumps the major version.
+
+## Unreleased
+
+- **Tyre ledger helpers** ([#16](https://github.com/rubengarciam/kai/issues/16)): `tyres.py` adds wheelsets and fits, replaces and retires tyre sets, so the tyre ledger no longer needs hand-editing.
+- **Docs restructure:** the README is now a short front door; installation, per-agent setup, upgrading, features and architecture moved to `docs/`, contributing to `CONTRIBUTING.md`. Added this changelog and GitHub pull request and issue templates.
+
+## [2.2.1](https://github.com/rubengarciam/kai/releases/tag/v2.2.1) - 2026-09-28
+
+- **Fixed:** five Garmin scripts and the Garmin README still told users to run `login --password`, a flag removed in v2.0.
+- **Changed:** skill docs use plain paths from the repo root instead of an OpenClaw-specific base-directory placeholder ([#3](https://github.com/rubengarciam/kai/issues/3)).
+- Added branch naming and PR conventions; more tests.
+
+## [2.2.0](https://github.com/rubengarciam/kai/releases/tag/v2.2.0) - 2026-09-28
+
+- **Changed:** chain wax and tyre tracking moved out of the Strava skill into a new `gear-maintenance` skill. Ledgers in the old location still work, with a notice. See [upgrading](docs/upgrading.md#gear-maintenance-moved-v22).
+
+## [2.1.0](https://github.com/rubengarciam/kai/releases/tag/v2.1.0) - 2026-09-28
+
+- **Added:** `chain-wax.py`, a chain wax ledger with km-since-wax reports and DUE SOON / DUE / OVERDUE statuses ([#10](https://github.com/rubengarciam/kai/issues/10)).
+
+## [2.0.0](https://github.com/rubengarciam/kai/releases/tag/v2.0.0) - 2026-09-28
+
+- **Breaking:** the Garmin skill needs `garminconnect` 0.3.x and Python 3.12+, and everyone logs in once more. `login --password` is removed and passwords are no longer read from `config.json`. See [upgrading](docs/upgrading.md#from-v1x-to-v20-garmin-login).
+- **Added:** hidden password and MFA prompts, `--password-stdin`, `GARMIN_TOKEN_DIR`, offline tests.
+
+## [1.1.0](https://github.com/rubengarciam/kai/releases/tag/v1.1.0) - 2026-09-28
+
+- **Added:** Claude Code and Codex support (`CLAUDE.md` and skill symlinks); runtime-neutral README.
+
+## [1.0.0](https://github.com/rubengarciam/kai/releases/tag/v1.0.0) - 2026-09-28
+
+- First release: Kai's instructions and four skills (endurance coach, TrainingPeaks, Garmin, Strava).

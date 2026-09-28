@@ -45,5 +45,61 @@ class Docs(unittest.TestCase):
         self.assertEqual(offenders, [])
 
 
+def slugs(md_path):
+    """GitHub-style heading anchors for a markdown file (ignores headings inside code fences)."""
+    seen, out, in_code = {}, set(), False
+    for line in md_path.read_text(errors="ignore").splitlines():
+        if line.startswith("```"):
+            in_code = not in_code
+            continue
+        m = re.match(r"^#{1,6}\s+(.+?)\s*#*\s*$", line)
+        if in_code or not m:
+            continue
+        text = re.sub(r"`", "", m.group(1)).lower()
+        slug = re.sub(r"[^\w\- ]", "", text, flags=re.UNICODE).strip().replace(" ", "-")
+        n = seen.get(slug, 0)
+        seen[slug] = n + 1
+        out.add(slug if n == 0 else f"{slug}-{n}")
+    return out
+
+
+LINK_RE = re.compile(r"(?<!\!)\[[^\]]*\]\(([^)\s]+)\)")
+
+
+@unittest.skipUnless((REPO / ".git").exists(), "not a git checkout")
+class Links(unittest.TestCase):
+    def markdown_files(self):
+        # templates/ holds files meant to be copied and filled in, so their sample links are not checked
+        return [f for f in tracked_docs() if f.suffix == ".md" and "templates" not in f.relative_to(REPO).parts]
+
+    def test_relative_links_and_anchors_resolve(self):
+        broken = []
+        for f in self.markdown_files():
+            text = re.sub(r"```.*?```", "", f.read_text(errors="ignore"), flags=re.S)
+            for target in LINK_RE.findall(text):
+                if re.match(r"^(https?:|mailto:|tel:)", target):
+                    continue
+                path_part, _, anchor = target.partition("#")
+                dest = f if not path_part else (f.parent / path_part).resolve()
+                if not dest.exists():
+                    broken.append(f"{f.relative_to(REPO)}: {target} (no such file)")
+                elif anchor and dest.suffix == ".md" and anchor not in slugs(dest):
+                    broken.append(f"{f.relative_to(REPO)}: {target} (no such heading)")
+        self.assertEqual(broken, [])
+
+    def test_anchors_that_published_releases_link_to_still_exist(self):
+        # v2.0.0's release notes link to README#upgrading-from-v1x
+        self.assertIn("upgrading-from-v1x", slugs(REPO / "README.md"))
+
+    def test_readme_stays_a_short_front_door(self):
+        lines = len((REPO / "README.md").read_text().splitlines())
+        self.assertLessEqual(lines, 160, f"README is {lines} lines: put detail in docs/ and link to it")
+
+    def test_every_docs_page_is_linked_from_the_readme(self):
+        readme = (REPO / "README.md").read_text()
+        for page in sorted((REPO / "docs").glob("*.md")):
+            self.assertIn(f"docs/{page.name}", readme, f"{page.name} is not linked from the README")
+
+
 if __name__ == "__main__":
     unittest.main()

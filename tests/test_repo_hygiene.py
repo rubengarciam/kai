@@ -8,7 +8,9 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 
-TRACKED = ["templates/USER.md", "templates/MEMORY.md", "skills/gear-maintenance/data/tyres.example.json",
+TRACKED = ["templates/USER.md", "templates/MEMORY.md", "README.md", "CONTRIBUTING.md", "CHANGELOG.md", "docs/installation.md", "docs/architecture.md", "docs/upgrading.md",
+           ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.md",
+           "skills/gear-maintenance/data/tyres.example.json",
            "skills/gear-maintenance/data/chain-wax.example.json", "skills/gear-maintenance/SKILL.md",
            ".claude/skills/gear-maintenance", ".agents/skills/gear-maintenance", "data/nutrition-log.example.csv", "requirements.txt"]
 IGNORED = ["USER.md", "MEMORY.md", "memory/notes.md", "data/nutrition-log.csv",

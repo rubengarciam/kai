@@ -17,7 +17,7 @@ fi
 
 if ! python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 12) else 1)'; then
     echo "❌ Python 3.12+ is required (found $(python3 --version))."
-    echo "   Get a 3.12 environment with uv: https://docs.astral.sh/uv/ (see the top-level README)"
+    echo "   Get a 3.12 environment with uv: https://docs.astral.sh/uv/ (see docs/installation.md in the Kai repo)"
     exit 1
 fi
 
