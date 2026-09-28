@@ -1,0 +1,25 @@
+{
+  "_doc": "Example tyre mileage ledger. Copy to tyres.json and edit. Tyres are tied to WHEELSETS, not bikes. Mileage = sum of qualifying outdoor rides since fitted_date across the wheelset's Strava gear_ids. Indoor rides are excluded: VirtualRide, trainer=true, or a plain Ride with no GPS start location. Replace a tyre set by setting retired=true on the old entry and adding a new one. See scripts/tyre-mileage.sh.",
+  "wheelsets": {
+    "road_wheels": {
+      "name": "Road wheels",
+      "usual_bike": "Road bike",
+      "gear_ids": ["b0000000"]
+    }
+  },
+  "tyres": [
+    {
+      "id": "road_wheels-example-2026-01-01",
+      "wheelset": "road_wheels",
+      "model": "Example 28mm clincher",
+      "fitted_date": "2026-01-01",
+      "fitted_bike_odometer_km": 0,
+      "wear_check_interval_km": 500,
+      "replace_at_km": 4000,
+      "retired": false,
+      "manual_include_ids": [],
+      "manual_exclude_ids": [],
+      "note": "Find your gear_ids with scripts/gear-mileage.sh"
+    }
+  ]
+}
