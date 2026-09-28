@@ -16,7 +16,7 @@ Create personalized, periodized training plans for triathlon, marathon, and ultr
 ## Requirements
 
 - At least one of: TrainingPeaks, Garmin, or Strava skill configured
-- Python 3.7+ (for Garmin/TrainingPeaks skills)
+- Python 3.12+ for the Garmin skill (TrainingPeaks needs 3.6+)
 
 ## How It Works
 

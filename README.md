@@ -71,22 +71,22 @@ Memory is plain markdown in `memory/`, so it survives model or runtime changes a
 
 ## Requirements
 
-Kai runs on **Linux or macOS** (on Windows, use WSL). Verified on Raspberry Pi OS (Debian) with Python 3.13; the package pins need Python 3.10+.
+Kai runs on **Linux or macOS** (on Windows, use WSL). Verified on Raspberry Pi OS (Debian) with Python 3.13. The Garmin skill needs Python 3.12 or newer; TrainingPeaks and Strava work on older Python 3 versions.
 
 | Requirement | Version | Needed for | How to get it |
 | ----------- | ------- | ---------- | ------------- |
 | Agent runtime | One of: [OpenClaw](https://docs.openclaw.ai) (needs Node.js 24.16+ or 26.1+, which its installer sets up), [Claude Code](https://code.claude.com), [Codex](https://developers.openai.com/codex) or [Hermes Agent](https://hermes-agent.nousresearch.com) | Everything | Follow the runtime's install guide |
 | `git` | any | Cloning this repo | `sudo apt install git` / `brew install git` |
-| `python3` | **3.10 or newer** | Garmin and TrainingPeaks skills | Check with `python3 --version` |
+| `python3` | **3.12 or newer** for Garmin (TrainingPeaks needs 3.6+) | Garmin and TrainingPeaks skills | Check with `python3 --version`. If it's older, use `uv` (see step 3) |
 | `python3-venv` | matches Python | Isolating the Garmin packages | Debian/Ubuntu/Raspberry Pi OS: `sudo apt install python3-venv`. macOS: included with Python |
 | `curl` and `bash` | any | Strava skill | Preinstalled on Linux and macOS |
-| Python packages | `garminconnect==0.2.38`, `fitparse`, `gpxpy` (pinned in `requirements.txt`) | Garmin skill only | See "Install the Python packages" below |
+| Python packages | `garminconnect` 0.3.x, `fitparse`, `gpxpy` (listed in `requirements.txt`) | Garmin skill only | See "Install the Python packages" below |
 | Internet access | | All data sources; Garmin dashboards also load Chart.js from a CDN | |
 | Accounts | at least one of TrainingPeaks, Garmin Connect, Strava | Data | You may skip any you don't use |
 
 The TrainingPeaks skill uses only the Python standard library, and the Strava skill only needs `curl` and Python. **Only Garmin needs extra packages.**
 
-> **Pin, don't upgrade:** the Garmin scripts need `garminconnect` 0.2.x. A plain `pip install garminconnect` now installs 0.3.x, which needs Python 3.12+ and removed the login-token API these scripts use, so the Garmin skill breaks. Always install from `requirements.txt`.
+> **Upgrading from v1.x?** The Garmin skill now uses `garminconnect` 0.3.x, which needs Python 3.12+. Reinstall the packages from `requirements.txt` and run the Garmin login once more: tokens saved by v1.x are in a different format and can't be reused.
 
 ## Setup
 
@@ -115,7 +115,7 @@ Fill in `USER.md` (thresholds, goals, race calendar, injuries, whether you have 
 
 ### 3. Install the Python packages (Garmin only)
 
-Skip this if you don't use Garmin. Create a virtual environment inside the Kai folder and install the pinned packages:
+Skip this if you don't use Garmin. Create a virtual environment inside the Kai folder and install the packages:
 
 ```bash
 cd ~/.openclaw/workspace-kai
@@ -123,14 +123,24 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ```
 
-If `python3 -m venv` fails with "ensurepip is not available", run `sudo apt install python3-venv` and retry. Kai's `AGENTS.md` tells the agent to run the Garmin scripts with `.venv/bin/python3` when the folder exists. Use the same interpreter when you run them yourself, for example:
+If `python3 -m venv` fails with "ensurepip is not available", run `sudo apt install python3-venv` and retry.
+
+**Python older than 3.12** (for example Debian 12 or Ubuntu 22.04): use [uv](https://docs.astral.sh/uv/) to get a 3.12 environment without touching the system Python:
 
 ```bash
-.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py login --email you@example.com --password 'your-password'
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv venv --python 3.12 .venv
+uv pip install --python .venv/bin/python -r requirements.txt
+```
+
+Kai's `AGENTS.md` tells the agent to run the Garmin scripts with `.venv/bin/python3` when the folder exists. Use the same interpreter when you run them yourself, for example:
+
+```bash
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py login
 .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_auth.py status
 ```
 
-If your Garmin account uses two-factor authentication, run the login command in a terminal: it will ask for the code.
+`login` asks for your email and password on the terminal (the password is hidden and never stored; only session tokens are saved, readable by you alone). If your Garmin account uses two-factor authentication it asks for the code too. **Run login yourself, in your own terminal:** don't paste your password into a chat with the agent. For scripting, use `--password-stdin` or the `GARMIN_PASSWORD` variable.
 
 ### 4. Connect your data sources
 

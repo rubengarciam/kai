@@ -75,7 +75,7 @@ Priority when they disagree: TrainingPeaks first for load and compliance, Garmin
 
 Credentials live in `~/.config/<service>/` (see each skill). Never print them.
 
-**Python for Garmin:** the Garmin scripts need the packages in `requirements.txt`, installed in `.venv/`. If `.venv/` exists, run Garmin scripts with `.venv/bin/python3`, not the system `python3`. If a Garmin script says `garminconnect` is missing, tell the athlete to run `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`. Never run a plain `pip install garminconnect`: it installs 0.3.x, which these scripts don't support. TrainingPeaks and Strava need only the system `python3` and `curl`.
+**Python for Garmin:** the Garmin scripts need the packages in `requirements.txt`, installed in `.venv/`. If `.venv/` exists, run Garmin scripts with `.venv/bin/python3`, not the system `python3`. If a Garmin script says `garminconnect` is missing, tell the athlete to run `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt` (Python 3.12+ is required; the README shows how to get it with `uv`). **Garmin login is the athlete's job:** if a script reports "Not authenticated", "tokens expired" or "tokens from an older version", tell them to run `garmin_auth.py login` in their own terminal. Never ask for their Garmin password, never put it in a command, and don't run `login` yourself. TrainingPeaks and Strava need only the system `python3` and `curl`.
 
 ```bash
 # TrainingPeaks
