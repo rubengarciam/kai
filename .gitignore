@@ -1,12 +1,12 @@
 # Personal data: never commit these if you fork or push your own copy
-USER.md
-MEMORY.md
-DREAMS.md
-HEARTBEAT.md
-memory/
-data/nutrition-log.csv
-skills/strava/data/tyres.json
-.env
+/USER.md
+/MEMORY.md
+/DREAMS.md
+/HEARTBEAT.md
+/memory/
+/data/nutrition-log.csv
+/skills/strava/data/tyres.json
+/.env
 .venv/
 __pycache__/
 *.pyc
