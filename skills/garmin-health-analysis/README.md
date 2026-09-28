@@ -26,13 +26,13 @@ Query health and training metrics from Garmin Connect. Works with any AI assista
 
 ### 1. Install dependencies
 
-From the Kai repo root, in a virtual environment (see the top-level README):
+From the Kai repo root, in a virtual environment (see [docs/installation.md](../../docs/installation.md#python-packages-garmin-only)):
 
 ```bash
 .venv/bin/pip install -r requirements.txt
 ```
 
-On Python older than 3.12, use `uv` (see the top-level README).
+On Python older than 3.12, use `uv` (see [docs/installation.md](../../docs/installation.md#python-packages-garmin-only)).
 
 ### 2. Authenticate
 
