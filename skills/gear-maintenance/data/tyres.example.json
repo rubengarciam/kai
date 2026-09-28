@@ -1,5 +1,5 @@
 {
-  "_doc": "Example tyre mileage ledger. Copy to tyres.json and edit. Tyres are tied to WHEELSETS, not bikes. Mileage = sum of qualifying outdoor rides since fitted_date across the wheelset's Strava gear_ids. Indoor rides are excluded: VirtualRide, trainer=true, or a plain Ride with no GPS start location. Replace a tyre set by setting retired=true on the old entry and adding a new one. See scripts/tyre-mileage.sh.",
+  "_doc": "Example tyre mileage ledger. Copy to tyres.json and edit. Tyres are tied to WHEELSETS, not bikes. Mileage = sum of qualifying outdoor rides since fitted_date across the wheelset's Strava gear_ids. Indoor rides are excluded: VirtualRide, trainer=true, or a plain Ride with no GPS start location. Manage it with scripts/tyres.py (add-wheelset, add-set --replace, retire) rather than by hand; the report is scripts/tyre-mileage.sh.",
   "wheelsets": {
     "road_wheels": {
       "name": "Road wheels",
@@ -19,7 +19,7 @@
       "retired": false,
       "manual_include_ids": [],
       "manual_exclude_ids": [],
-      "note": "Find your gear_ids with scripts/gear-mileage.sh"
+      "note": "Find your gear_ids with skills/strava/scripts/gear-mileage.sh"
     }
   ]
 }

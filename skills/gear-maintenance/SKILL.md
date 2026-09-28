@@ -7,7 +7,7 @@ description: Track bike chain waxing and tyre wear by mileage. Use when the athl
 
 Ledger-based maintenance tracking for bikes: when the chain was last waxed and when it is due again, and how far each tyre set has run. Odometers come from Strava (lifetime gear distance) or, for bikes without Strava tracking, are entered by hand. Python 3 with the standard library only; no extra packages.
 
-Personal ledgers live in `skills/gear-maintenance/data/` and are git-ignored: `chain-wax.json` and `tyres.json` (copy the `*.example.json` files or let `chain-wax.py add-bike` create the first one).
+Personal ledgers live in `skills/gear-maintenance/data/` and are git-ignored: `chain-wax.json` and `tyres.json` (let `chain-wax.py add-bike` and `tyres.py add-wheelset` create them, or copy the `*.example.json` files).
 
 ## Credentials
 
@@ -32,7 +32,28 @@ python3 skills/gear-maintenance/scripts/chain-wax.py set-odometer partner 180   
 - `log` uses the live odometer by default. A past `--date`, or a manual bike, needs `--odometer`.
 - Exit code 2 means a Strava odometer could not be read. A corrupt ledger is reported and never overwritten.
 
-## `tyre-mileage.sh` — Tyre wear per wheelset
+## Tyres
+
+### `tyres.py` — Fit, replace and retire tyre sets
+
+```bash
+python3 skills/gear-maintenance/scripts/tyres.py list
+python3 skills/gear-maintenance/scripts/tyres.py add-wheelset road_wheels --name "Road wheels" --usual-bike "Road bike" --gear-id b1234567
+python3 skills/gear-maintenance/scripts/tyres.py add-wheelset storage --name "Stored wheels"                    # no Strava gear is fine
+python3 skills/gear-maintenance/scripts/tyres.py add-set road_wheels --model "GP5000 28mm" --replace-at 4000       # fitted today
+python3 skills/gear-maintenance/scripts/tyres.py add-set road_wheels --model "GP5000 28mm" --replace --date 2026-09-27   # retire the old set, fit the new one
+python3 skills/gear-maintenance/scripts/tyres.py retire road_wheels-gp5000-28mm-2026-01-01 --date 2026-09-27
+```
+
+Use it instead of editing `data/tyres.json` by hand; the report below reads the same file.
+
+- A wheelset wears one tyre set at a time, so `add-set` **refuses while the wheelset already has an active set**. Add `--replace` to retire it (as of the new set's date) and fit the new one in a single write; `retire` also records a `retired_date`.
+- `--date` defaults to today; `--wear-interval` (default 500 km) and `--replace-at` (optional end-of-life) set the report's flags.
+- `fitted_bike_odometer_km` is informational only (the report never reads it). It comes from `--odometer`, or from Strava when the wheelset has exactly one gear id and the set is fitted today; otherwise it stays null. Strava being unreachable never blocks a change.
+- The ledger is loaded, changed and saved as a whole: your notes, `manual_include_ids` / `manual_exclude_ids` and any other fields are kept. The write is atomic and a corrupt ledger is reported, never overwritten. A ledger left in the old `skills/strava/data/` location is edited in place (with a notice); a new file is never created next to it.
+- Set ids look like `<wheelset>-<model>-<date>`, with `-2`, `-3` added if two sets are fitted the same day.
+
+### `tyre-mileage.sh` — Tyre wear report per wheelset
 
 ```bash
 bash skills/gear-maintenance/scripts/tyre-mileage.sh              # per wheelset, outdoor km since fitted
@@ -40,7 +61,7 @@ bash skills/gear-maintenance/scripts/tyre-mileage.sh --verbose    # list every c
 bash skills/gear-maintenance/scripts/tyre-mileage.sh --json
 ```
 
-Tyres are tied to **wheelsets**, in `data/tyres.json` (see `data/tyres.example.json`). Mileage is the sum of qualifying **outdoor** rides since the tyre's `fitted_date` across the wheelset's Strava gear ids. Indoor rides are excluded (VirtualRide, trainer flag, or a plain Ride with no GPS start), because tyres don't wear on a trainer; `manual_include_ids` / `manual_exclude_ids` override this. It flags a wear check every `wear_check_interval_km` and a replacement watch near `replace_at_km`. To replace a set: set `retired: true` on the old entry and add a new one.
+Tyres are tied to **wheelsets**, in `data/tyres.json` (see `data/tyres.example.json`). Mileage is the sum of qualifying **outdoor** rides since the tyre's `fitted_date` across the wheelset's Strava gear ids. Indoor rides are excluded (VirtualRide, trainer flag, or a plain Ride with no GPS start), because tyres don't wear on a trainer; `manual_include_ids` / `manual_exclude_ids` override this. It flags a wear check every `wear_check_interval_km` and a replacement watch near `replace_at_km`. To replace a set, use `tyres.py add-set ... --replace`.
 
 ## Notes
 
