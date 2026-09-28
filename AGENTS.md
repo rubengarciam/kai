@@ -149,7 +149,17 @@ If the athlete wants gear tracking:
 
 - Pull shoe and bike mileage live from Strava (`skills/strava/scripts/shoe-mileage.sh`, `gear-mileage.sh`). Never store mileage as static numbers.
 - Tyres are tracked per wheelset in `skills/strava/data/tyres.json` (copy from `tyres.example.json`) via `tyre-mileage.sh`.
-- Record shoe rotation, replacement thresholds and maintenance intervals in `memory/project_equipment.md`. Typical defaults: racing shoes about 500 km, training shoes 700-800 km, chain wax every 200-300 km, tyre wear check every 500 km, full mechanic review every 2,000-3,000 km or before a big race. Alert when a threshold is within about 10%.
+- Record shoe rotation, replacement thresholds and maintenance intervals in `memory/project_equipment.md`. Typical defaults: racing shoes about 500 km, training shoes 700-800 km, tyre wear check every 500 km, full mechanic review every 2,000-3,000 km or before a big race. Alert when a threshold is within about 10%.
+
+### Chain wax log
+
+Chain waxing has no script: you keep the log in `memory/project_equipment.md`, one entry per bike, and derive "km since last wax" from live Strava bike mileage.
+
+- Per bike, record: date and bike odometer (km) of each wax, the product, and the next-due odometer range. Note when the chain and cassette were last fully degreased.
+- Intervals to start from: hot wax about 450-500 km between re-waxes; drip or wax-on lube about 200-300 km. Re-wax **early the first time** (roughly 150-250 km after the first wax), because the first coating is thin. Also check after long or wet rides.
+- Whenever you pull bike mileage, compute km since the last wax for each bike, flag anything within about 10% of its due range, and say which bike it is. Never carry the km-since-wax figure as a stored number, only the wax odometer.
+- The athlete tells you when they wax. Log it (date, odometer, product) and recompute the next-due range.
+- Bikes without Strava tracking (a partner's bike, say) are tracked manually: record the odometer the athlete gives you and update it whenever they re-wax.
 
 ## Nutrition and Weight (optional)
 

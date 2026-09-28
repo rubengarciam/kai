@@ -2,11 +2,26 @@
 
 Kai is an AI coaching agent for triathletes, runners, cyclists and swimmers. It connects to the platforms you already train with (TrainingPeaks, Garmin Connect, Strava), reads your actual data, and does what a good coach does with it: analyzes your sessions, tracks fitness and fatigue, watches recovery, and, if you don't have a human coach, builds periodized training plans for your races.
 
-It's built as an [OpenClaw](https://docs.openclaw.ai) agent workspace: a folder of plain markdown instructions plus four skills. There is no server or app to deploy. You point an agent at this folder and chat with it in whatever channel your OpenClaw is connected to.
+It's built as an [OpenClaw](https://docs.openclaw.ai) agent workspace: a folder of plain markdown instructions plus four skills. There is no server or app to deploy. You point an agent at this folder and chat with it in whatever channel your agent runtime is connected to. It should also work with [Hermes Agent](#using-kai-with-hermes) (see below; untested).
 
 > Kai is a coaching assistant, not a doctor. It will flag things that look medical and tell you to see a professional.
 
 ## What Kai does
+
+| Capability | What you get | Needs |
+| ---------- | ------------ | ----- |
+| **Workout analysis** | Overall read, planned-vs-actual table and lap-by-lap breakdown; data is read before your comments | TrainingPeaks, plus Strava for laps and Garmin for recovery context |
+| **Fitness and fatigue tracking** | CTL / ATL / TSB, weekly TSS, form for race day | TrainingPeaks |
+| **Recovery monitoring** | HRV, resting HR, sleep, Body Battery and readiness trends read alongside load | Garmin |
+| **Training plans** | Periodized plans (base, build, peak, taper) with zones, paces, workouts and a race-day plan, validated with you first | Any one data source, or just a chat |
+| **Analyst mode** | Interprets data and preps questions for your human coach; never overrides the plan | Any data source |
+| **Gear tracking** | Live shoe and bike mileage, per-wheelset tyre wear, replacement and maintenance alerts | Strava |
+| **Chain wax log** | Wax dates and odometer per bike, km since last wax, next-due alerts (early first re-wax, then a full interval) | Strava for mileage; log kept in memory |
+| **Nutrition and weight** | Log food and weight in chat; deficits paced to training load; checks tomorrow's session first | Optional; weight syncs to TrainingPeaks |
+| **Race notes** | Race-specific pacing, fueling and taper plans saved for later chats | Nothing |
+| **Proactive checks** | Watches for bad recovery trends, upcoming key sessions and gear thresholds | A runtime with heartbeats or scheduling |
+
+The details, one capability at a time:
 
 ### Analyzes your workouts
 Ask "how did that session go?" and Kai pulls the workout from TrainingPeaks, the lap splits from Strava, and your recovery context from Garmin (sleep, HRV, resting HR). It then gives you:
@@ -33,6 +48,7 @@ If you have a human coach, tell Kai in `USER.md`. It switches to analyst mode: i
 
 ### Optional extras
 - **Gear tracking**: live shoe and bike mileage from Strava, tyre wear per wheelset, replacement and maintenance alerts.
+- **Chain wax log**: Kai keeps a wax log per bike (date, odometer, product) and works out km since the last wax from live Strava mileage. It suggests re-waxing early the first time, then at a full interval (about 450-500 km for hot wax, 200-300 km for drip wax), and warns you when a bike is close. Bikes without Strava tracking, like a partner's, can be logged by hand.
 - **Nutrition and weight tracking**: log food and weight in plain chat. Weight goes to TrainingPeaks, food to a local CSV. Kai tracks kcal and protein, paces deficits to your training load, and checks tomorrow's session before recommending a low-carb day.
 - **Race notes**: race-specific tactics, pacing and taper plans are saved to memory so they're available in any later chat.
 - **Proactive checks**: with heartbeats enabled, Kai can watch for things like a recovery trend turning bad or a gear threshold approaching.
@@ -55,12 +71,14 @@ Memory is plain markdown in `memory/`, so it survives model or runtime changes a
 
 ## Setup
 
+These steps are for OpenClaw. For Hermes, see [Using Kai with Hermes](#using-kai-with-hermes).
+
 **You need:** a working [OpenClaw](https://docs.openclaw.ai) install, Python 3, and an account on at least one of TrainingPeaks, Garmin Connect or Strava.
 
-### 1. Get the workspace
+### 1. Get the workspace (OpenClaw)
 
 ```bash
-git clone https://github.com/gertybot/kai.git ~/.openclaw/workspace-kai
+git clone https://github.com/rubengarciam/kai.git ~/.openclaw/workspace-kai
 openclaw agents add kai --workspace ~/.openclaw/workspace-kai
 ```
 
@@ -103,6 +121,35 @@ Example prompts:
 > "What's my shoe mileage? Anything close to replacement?"
 >
 > "Log weight 72.4. Had oats and a protein shake for breakfast."
+
+## Using Kai with Hermes
+
+Kai also works with [Hermes Agent](https://hermes-agent.nousresearch.com) (Nous Research). Hermes reads `AGENTS.md` from the working directory, uses the same `SKILL.md` skill format, and keeps its identity in a global `SOUL.md`. This setup is based on Hermes's documentation. It has not been tested against a live Hermes install yet, so report any rough edges.
+
+```bash
+# 1. Get the workspace anywhere you like
+git clone https://github.com/rubengarciam/kai.git ~/kai
+cd ~/kai
+
+# 2. Personalize
+cp templates/USER.md USER.md
+cp templates/MEMORY.md MEMORY.md
+
+# 3. Give Kai its personality (Hermes only reads SOUL.md from its home directory)
+cp SOUL.md ~/.hermes/SOUL.md     # or $HERMES_HOME/SOUL.md
+
+# 4. Start Hermes from this folder so it picks up AGENTS.md
+hermes
+```
+
+Notes:
+
+- **Run Hermes from the repo folder.** Hermes loads `AGENTS.md` from the working directory. Kai's instructions and the `skills/...` paths in them are relative to that folder. If you'd rather keep Kai separate from your other Hermes use, create a dedicated profile with `hermes profile create kai` and copy `SOUL.md` into that profile's home.
+- **Skills work in place.** Kai's `AGENTS.md` tells the agent to run the scripts under `skills/`, so nothing has to be installed. If you also want them as slash commands (`/strava`, `/trainingpeaks` and so on), copy or symlink the four folders in `skills/` into `~/.hermes/skills/`, or add the repo's `skills/` folder as an external skill directory (see the Hermes docs).
+- **Skill docs mention `{baseDir}`.** That placeholder is an OpenClaw convention meaning "this skill's folder". If Hermes doesn't substitute it, tell Kai the skills live in `./skills/<name>`, or use the paths shown in `AGENTS.md`.
+- **Memory.** Kai's own memory (`USER.md`, `MEMORY.md`, `memory/`) is plain files in the repo and is read and written through Hermes's file tools. Hermes also has its own built-in memory, and the two will coexist. To keep things simple, tell Kai to keep athlete details in `USER.md` and `memory/`.
+- **Credentials** are set up per skill, exactly as in the OpenClaw steps above. They live in `~/.config/<service>/`, independent of the agent runtime.
+- **OpenClaw-only bits** (the `openclaw agents add` command, heartbeat polling and push-notification delivery) don't apply. Use Hermes's own scheduler if you want proactive checks.
 
 ## Repository layout
 
