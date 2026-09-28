@@ -85,7 +85,7 @@ Kai runs on **Linux or macOS** (on Windows, use WSL). Verified on Raspberry Pi O
 | Internet access | | All data sources; Garmin dashboards also load Chart.js from a CDN | |
 | Accounts | at least one of TrainingPeaks, Garmin Connect, Strava | Data | You may skip any you don't use |
 
-The TrainingPeaks skill uses only the Python standard library, and the Strava skill only needs `curl` and Python. **Only Garmin needs extra packages.**
+The TrainingPeaks and gear-maintenance skills use only the Python standard library, and the Strava skill only needs `curl` and Python. **Only Garmin needs extra packages.** Live odometers for gear maintenance come from the Strava skill's credentials; bikes not on Strava can be tracked by hand.
 
 > **Upgrading from v1.x?** The Garmin skill now needs Python 3.12+ and you have to log in to Garmin once more. See [Upgrading from v1.x](#upgrading-from-v1x).
 
@@ -153,9 +153,27 @@ Each skill has its own setup guide. Credentials are stored on your machine under
 | Garmin Connect | The packages from step 3, then a one-time login (`garmin_auth.py login`, shown above) | [skills/garmin-health-analysis](skills/garmin-health-analysis/README.md) |
 | Strava | A free Strava API app (client ID and secret) and one OAuth authorization | [skills/strava](skills/strava/README.md) |
 
-Optional gear tracking (chain wax and tyres) uses the `gear-maintenance` skill: start with `python3 skills/gear-maintenance/scripts/chain-wax.py add-bike ...` or `cp skills/gear-maintenance/data/tyres.example.json skills/gear-maintenance/data/tyres.json` and edit it.
+### 5. Optional: gear maintenance (chain wax and tyres)
 
-### 5. Start talking
+The `gear-maintenance` skill tracks when each bike's chain was last waxed and how far your tyres have run. Odometers come from Strava (set it up in step 4), or you give them by hand for a bike that isn't on Strava, like a partner's. Skip this step if you don't want it.
+
+```bash
+# Chain wax: add each bike, record its last wax, then get the report
+python3 skills/gear-maintenance/scripts/chain-wax.py add-bike road --name "Road bike" --gear-id <your Strava bike id>
+python3 skills/gear-maintenance/scripts/chain-wax.py log road --odometer <km at your last wax> --date <YYYY-MM-DD> --product "Hot wax"
+python3 skills/gear-maintenance/scripts/chain-wax.py report
+
+# A bike that isn't on Strava
+python3 skills/gear-maintenance/scripts/chain-wax.py add-bike partner --name "Partner's bike" --manual --odometer <km>
+
+# Tyres: copy the example, then edit wheelsets, Strava bike ids and fitted dates
+cp skills/gear-maintenance/data/tyres.example.json skills/gear-maintenance/data/tyres.json
+bash skills/gear-maintenance/scripts/tyre-mileage.sh
+```
+
+Find your Strava bike ids with `bash skills/strava/scripts/gear-mileage.sh`. From then on Kai runs the report itself whenever bike mileage or maintenance comes up, and you can just tell it "I waxed the road bike today" to log it. Your ledgers are plain files in `skills/gear-maintenance/data/`, git-ignored so they never get committed. See [skills/gear-maintenance](skills/gear-maintenance/README.md) for the statuses, the default intervals and how tyre mileage treats indoor rides.
+
+### 6. Start talking
 
 Example prompts:
 
@@ -168,6 +186,8 @@ Example prompts:
 > "How's my recovery looking this week?"
 >
 > "What's my shoe mileage? Anything close to replacement?"
+>
+> "I waxed the road bike today. When is it due again?"
 >
 > "Log weight 72.4. Had oats and a protein shake for breakfast."
 
