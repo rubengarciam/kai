@@ -44,6 +44,28 @@ class Docs(unittest.TestCase):
                         offenders.append(f"{f.relative_to(REPO)}:{n}")
         self.assertEqual(offenders, [])
 
+    def test_agents_md_session_routine_names_files_that_exist(self):
+        """AGENTS.md tells the agent to read specific files at the start of every session (e.g.
+        `Read `SOUL.md``). If one of those is renamed and AGENTS.md isn't updated, the agent is sent
+        looking for a file that no longer exists -- this is exactly what happened when SECURITY.md
+        became CREDENTIALS.md (#24)."""
+        text = (REPO / "AGENTS.md").read_text()
+        section = re.search(r"## Every Session\n(.*?)\n## ", text, re.S)
+        self.assertIsNotNone(section, "AGENTS.md has no 'Every Session' heading to check")
+        # bare `Foo.md` filenames only: no path separators (excludes memory/YYYY-MM-DD.md, a pattern)
+        names = set(re.findall(r"`([A-Za-z][A-Za-z0-9_-]*\.md)`", section.group(1)))
+        self.assertTrue(names, "found no file names to check in the 'Every Session' section")
+        missing = [n for n in names
+                  if not (REPO / n).exists() and not (REPO / "templates" / n).exists()]
+        self.assertEqual(missing, [], "referenced in AGENTS.md's session routine but not present "
+                                      "at the repo root or as a templates/ starter file")
+        # SECURITY.md is the repo's vulnerability-reporting policy, for people, not the agent (#24);
+        # existence alone can't tell "points at the right file" from "still points at the old name that
+        # now means something else", so this is checked explicitly rather than relying on the file existing
+        self.assertNotIn("SECURITY.md", names,
+                         "the agent's session routine must not read SECURITY.md (that's for reporting a "
+                         "vulnerability in this repo's code, not agent instructions); use CREDENTIALS.md")
+
 
 def slugs(md_path):
     """GitHub-style heading anchors for a markdown file (ignores headings inside code fences)."""
