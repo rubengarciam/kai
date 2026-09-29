@@ -2,7 +2,7 @@
 
 The full notes for each release, with upgrade steps, are on the [releases page](https://github.com/rubengarciam/kai/releases). This is the short version. Versions follow [semantic versioning](https://semver.org/): a change that breaks documented commands, paths or Python requirements bumps the major version.
 
-## Unreleased
+## [2.3.1](https://github.com/rubengarciam/kai/releases/tag/v2.3.1) - 2026-09-29
 
 - **Fixed: `tyre-mileage.sh` read a tyre's `fitted_date` as midnight UTC** instead of the athlete's own local date, so a ride on the local morning of the fit day (east of UTC) could be missed entirely, and a ride the evening before (west of UTC) could be wrongly counted ([#22](https://github.com/rubengarciam/kai/issues/22)). It now compares each activity's own local date, which Strava already provides, so no timezone configuration is needed.
 
