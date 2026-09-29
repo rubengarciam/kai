@@ -2,8 +2,6 @@
 
 The full notes for each release, with upgrade steps, are on the [releases page](https://github.com/rubengarciam/kai/releases). This is the short version. Versions follow [semantic versioning](https://semver.org/): a change that breaks documented commands, paths or Python requirements bumps the major version.
 
-## Unreleased
-
 ## [2.3.2](https://github.com/rubengarciam/kai/releases/tag/v2.3.2) - 2026-09-29
 
 - **Fixed: `garmin_activity_files.py download --format fit` saved a ZIP archive under a `.fit` name** ([#15](https://github.com/rubengarciam/kai/issues/15)). Garmin sends the original file zipped, so `parse`, `query` and `analyze` failed with "Invalid .FIT File Header". The FIT file is now unpacked on download, and `parse`/`query`/`analyze` also accept a ZIP-wrapped FIT, so files an earlier version left on disk work without re-downloading.
