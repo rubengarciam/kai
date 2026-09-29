@@ -57,7 +57,7 @@ bash skills/gear-maintenance/scripts/tyre-mileage.sh --verbose    # list every c
 bash skills/gear-maintenance/scripts/tyre-mileage.sh --json
 ```
 
-Tyres are tied to **wheelsets**, in `data/tyres.json` (see `data/tyres.example.json`). Mileage is the sum of qualifying **outdoor** rides since the tyre's `fitted_date` across the wheelset's Strava gear ids. Indoor rides are excluded (VirtualRide, trainer flag, or a plain Ride with no GPS start), because tyres don't wear on a trainer; `manual_include_ids` / `manual_exclude_ids` override this. It flags a wear check every `wear_check_interval_km` and a replacement watch near `replace_at_km`. To replace a set, use `tyres.py add-set ... --replace`.
+Tyres are tied to **wheelsets**, in `data/tyres.json` (see `data/tyres.example.json`). Mileage is the sum of qualifying **outdoor** rides since the tyre's `fitted_date` (read as the athlete's own local date, via Strava's per-activity timezone, not UTC) across the wheelset's Strava gear ids. Indoor rides are excluded (VirtualRide, trainer flag, or a plain Ride with no GPS start), because tyres don't wear on a trainer; `manual_include_ids` / `manual_exclude_ids` override this. It flags a wear check every `wear_check_interval_km` and a replacement watch near `replace_at_km`. To replace a set, use `tyres.py add-set ... --replace`.
 
 ## Notes
 
