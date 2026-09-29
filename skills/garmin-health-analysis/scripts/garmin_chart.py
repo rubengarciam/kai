@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Generate interactive HTML charts from Garmin health data.
-Uses Chart.js for visualizations.
+Uses Chart.js for visualizations, bundled and embedded so the dashboards work offline.
 """
 
 import json
@@ -17,16 +17,36 @@ from garmin_auth import get_client
 from garmin_data import fetch_sleep, fetch_hrv, fetch_body_battery, fetch_heart_rate, fetch_activities, fetch_stress
 
 
+# Chart.js is bundled (see assets/README.md) and embedded in each dashboard, so the page draws with
+# no network access and no third-party CDN, and keeps working after it is moved or emailed.
+CHART_JS_ASSET = Path(__file__).resolve().parent.parent / "assets" / "chart.umd.js"
+CHART_JS_CDN = "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"
+
+
+def chart_js_script_tag():
+    """The <script> that provides Chart.js: the bundled copy inline, or the CDN if the file is missing."""
+    try:
+        source = CHART_JS_ASSET.read_text(encoding="utf-8")
+    except OSError:
+        print(f"⚠️  {CHART_JS_ASSET} is missing; loading Chart.js from the internet instead, "
+              "so this dashboard will be blank offline.", file=sys.stderr)
+        return f'<script src="{CHART_JS_CDN}"></script>'
+    # The map file isn't shipped, so a pointer to it from an inline script would only dangle.
+    kept = [line for line in source.splitlines() if not line.startswith("//# sourceMappingURL=")]
+    return "<script>\n" + "\n".join(kept) + "\n</script>"
+
+
 def generate_html(charts_data, title="Garmin Health Dashboard"):
     """Generate HTML with Chart.js visualizations."""
-    
+
+    chart_js_tag = chart_js_script_tag()
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    {chart_js_tag}
     <style>
         * {{
             margin: 0;

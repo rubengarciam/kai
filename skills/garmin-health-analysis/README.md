@@ -13,7 +13,7 @@ Query health and training metrics from Garmin Connect. Works with any AI assista
 - Intraday time-series: HR and stress throughout the day
 - Personal records from Garmin Connect
 - Activity lap splits
-- Interactive HTML dashboards (Chart.js)
+- Interactive HTML dashboards (Chart.js, bundled: they work offline)
 - Session tokens auto-refresh (no repeated logins); your password is never stored
 
 ## Requirements
@@ -157,7 +157,7 @@ Stored at `~/.config/garminconnect/`:
 .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_chart.py hrv --days 90 --output ~/hrv-trend.html
 ```
 
-Charts open in the default browser. Built with Chart.js.
+Charts open in the default browser. Built with [Chart.js](https://www.chartjs.org), which is bundled and embedded in each page (see `assets/README.md`), so a dashboard is one self-contained file that draws with no internet access, and keeps working if you move or email it.
 
 ### `garmin_query.py` — Time-based queries
 
