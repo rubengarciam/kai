@@ -47,3 +47,9 @@ mv skills/strava/data/chain-wax.json skills/strava/data/tyres.json skills/gear-m
 ```
 
 A ledger left in the old place still works, with a notice, so nothing breaks in the meantime.
+
+## SECURITY.md renamed to CREDENTIALS.md
+
+Kai's own rules on handling *your* credentials used to live in `SECURITY.md`. GitHub treats that filename as a repository's vulnerability-reporting policy (shown on the Security tab, offered to anyone reporting a bug), which isn't what that file was — so it's renamed to `CREDENTIALS.md`, and a real `SECURITY.md` with a reporting policy took its place ([#24](https://github.com/rubengarciam/kai/issues/24)).
+
+If you cloned this repo into your own agent's workspace before this change (rather than tracking `main`), copy the new `CREDENTIALS.md` in and update the reference in your own copy of `AGENTS.md`'s "Every Session" section from `SECURITY.md` to `CREDENTIALS.md`. Your old `SECURITY.md` still has the same credential rules if you'd rather just keep using it under that name — nothing forces the rename outside this repo.

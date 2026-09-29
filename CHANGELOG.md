@@ -2,6 +2,10 @@
 
 The full notes for each release, with upgrade steps, are on the [releases page](https://github.com/rubengarciam/kai/releases). This is the short version. Versions follow [semantic versioning](https://semver.org/): a change that breaks documented commands, paths or Python requirements bumps the major version.
 
+## Unreleased
+
+- **Changed: `SECURITY.md` renamed to `CREDENTIALS.md`.** It held Kai's own credential-handling rules, but GitHub treats the `SECURITY.md` filename as the repository's vulnerability-reporting policy. A real `SECURITY.md` with a reporting policy replaces it ([#24](https://github.com/rubengarciam/kai/issues/24)). See [upgrading](docs/upgrading.md#securitymd-renamed-to-credentialsmd) if you copied this workspace elsewhere.
+
 ## [2.3.0](https://github.com/rubengarciam/kai/releases/tag/v2.3.0) - 2026-09-29
 
 - **Added: tyre ledger helpers** ([#16](https://github.com/rubengarciam/kai/issues/16)): `tyres.py` adds wheelsets and fits, replaces and retires tyre sets, so the tyre ledger no longer needs hand-editing.

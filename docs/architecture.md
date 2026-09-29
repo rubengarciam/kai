@@ -24,7 +24,8 @@ AGENTS.md          Kai's operating manual (for the agent): session routine, role
 CLAUDE.md          Imports AGENTS.md for Claude Code
 SOUL.md            Personality and boundaries
 IDENTITY.md        Name and vibe
-SECURITY.md        Hard rules on credentials (for the agent)
+CREDENTIALS.md     Hard rules on credentials (for the agent)
+SECURITY.md        How to report a vulnerability in this repo (for people, not the agent)
 README.md          Front door: what Kai is, capabilities, quick start
 docs/              Installation, running Kai per agent, upgrading, features, this page
 CONTRIBUTING.md    Branches, pull requests, tests, releases
