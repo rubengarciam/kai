@@ -76,7 +76,7 @@ This is what lets Kai answer "am I ready to add intensity?" or "why do I feel fl
 
 **Needs.** A Garmin Connect account, Python 3.12+ and the packages in `requirements.txt`, and a one-time login that **you run yourself in your own terminal**: the password is never stored and Kai never asks for it in chat. See [installation](installation.md#python-packages-garmin-only).
 
-**Limits.** The Garmin connection uses a community library, not an official API, so it can break or be rate-limited. FIT files are currently saved as ZIP archives, so analysing them fails (tracked in [#15](https://github.com/rubengarciam/kai/issues/15)); GPX works. Some metrics need specific hardware (Body Battery needs an HRV-capable watch).
+**Limits.** The Garmin connection uses a community library, not an official API, so it can break or be rate-limited. Some metrics need specific hardware (Body Battery needs an HRV-capable watch).
 
 **Skill doc.** [garmin-health-analysis](../skills/garmin-health-analysis/README.md).
 

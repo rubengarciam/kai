@@ -4,9 +4,11 @@ Download and analyze Garmin activity FIT/GPX files.
 Extract GPS, elevation, pace, heart rate, power, cadence, etc.
 """
 
+import io
 import json
 import sys
 import os
+import zipfile
 from datetime import datetime
 from pathlib import Path
 
@@ -28,25 +30,90 @@ except ImportError:
     HAS_GPXPY = False
 
 
-def download_activity_file(client, activity_id, file_format="fit", output_dir="/tmp"):
-    """Download activity FIT or GPX file."""
+# An activity FIT file is KB to a few MB. This only bounds a corrupt or hostile archive.
+MAX_FIT_BYTES = 100 * 1024 * 1024
+
+
+class FitDataError(ValueError):
+    """The data is neither a FIT file nor a ZIP archive holding exactly one."""
+
+
+def _is_fit(data):
+    # Every FIT file carries the ASCII signature ".FIT" at bytes 8-11 of its header.
+    return len(data) >= 12 and data[8:12] == b".FIT"
+
+
+def fit_bytes_from(data):
+    """Raw FIT bytes from what Garmin (or a file on disk) gives us.
+
+    Garmin's "original" activity download is a ZIP archive that *contains* the .fit file, not the FIT
+    file itself, while a device or Garmin Express export is the bare FIT. Both are accepted. The archive
+    member is read into memory and its own name is never used as a path, so a hostile archive cannot
+    write outside the output directory.
+    """
+    if not data:
+        raise FitDataError("Garmin returned no data for this activity")
+    if _is_fit(data):
+        return bytes(data)
+
     try:
-        output_path = f"{output_dir}/activity_{activity_id}.{file_format.lower()}"
-        
-        if file_format.lower() == "fit":
-            data = client.download_activity(activity_id, dl_fmt=client.ActivityDownloadFormat.ORIGINAL)
-        elif file_format.lower() == "gpx":
-            data = client.download_activity(activity_id, dl_fmt=client.ActivityDownloadFormat.GPX)
-        elif file_format.lower() == "tcx":
-            data = client.download_activity(activity_id, dl_fmt=client.ActivityDownloadFormat.TCX)
-        else:
+        archive = zipfile.ZipFile(io.BytesIO(data))
+    except zipfile.BadZipFile:
+        raise FitDataError("The data is neither a FIT file nor a ZIP archive containing one")
+    with archive:
+        members = [m for m in archive.infolist() if not m.is_dir() and m.filename.lower().endswith(".fit")]
+        if not members:
+            names = ", ".join(m.filename for m in archive.infolist()[:5]) or "empty archive"
+            raise FitDataError(f"The ZIP archive has no .fit file in it (contents: {names})")
+        if len(members) > 1:
+            names = ", ".join(m.filename for m in members[:5])
+            raise FitDataError(f"The ZIP archive has more than one .fit file ({names}); not sure which to use")
+        member = members[0]
+        if member.file_size > MAX_FIT_BYTES:
+            raise FitDataError(f"{member.filename} is {member.file_size:,} bytes, larger than the "
+                               f"{MAX_FIT_BYTES:,} byte limit")
+        raw = archive.read(member)
+
+    if not _is_fit(raw):
+        raise FitDataError(f"{member.filename} in the ZIP archive is not a valid FIT file")
+    return raw
+
+
+def _write_private(path, data):
+    """Write owner-only (0600), without following a symlink planted at the destination: the default
+    output directory, /tmp, is shared, and these files hold GPS tracks."""
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_NOFOLLOW", 0)
+    fd = os.open(path, flags, 0o600)
+    with os.fdopen(fd, "wb") as f:
+        if hasattr(os, "fchmod"):
+            os.fchmod(f.fileno(), 0o600)  # the mode above only applies when the file is new
+        f.write(data)
+
+
+def download_activity_file(client, activity_id, file_format="fit", output_dir="/tmp"):
+    """Download an activity as FIT, GPX or TCX into output_dir (created if missing, mode 700)."""
+    try:
+        fmt = file_format.lower()
+        formats = {
+            "fit": client.ActivityDownloadFormat.ORIGINAL,
+            "gpx": client.ActivityDownloadFormat.GPX,
+            "tcx": client.ActivityDownloadFormat.TCX,
+        }
+        if fmt not in formats:
             return {"error": f"Unsupported format: {file_format}"}
-        
-        with open(output_path, 'wb') as f:
-            f.write(data)
-        
-        return {"file": output_path, "activity_id": activity_id, "format": file_format}
-    
+
+        data = client.download_activity(activity_id, dl_fmt=formats[fmt])
+        if fmt == "fit":
+            data = fit_bytes_from(data)
+
+        # mode applies only to a directory created here, not to parents or an existing directory
+        out_dir = Path(output_dir)
+        out_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+        output_path = out_dir / f"activity_{activity_id}.{fmt}"
+        _write_private(output_path, data)
+
+        return {"file": str(output_path), "activity_id": activity_id, "format": file_format}
+
     except Exception as e:
         return {"error": str(e), "activity_id": activity_id}
 
@@ -57,7 +124,10 @@ def parse_fit_file(file_path):
         return {"error": "fitparse library not installed. Run: pip install -r requirements.txt in the Kai repo root"}
     
     try:
-        fitfile = fitparse.FitFile(file_path)
+        # Accept a bare FIT or a ZIP holding one (what earlier versions saved for `download --format fit`)
+        with open(file_path, "rb") as f:
+            raw = fit_bytes_from(f.read())
+        fitfile = fitparse.FitFile(io.BytesIO(raw))
         
         # Extract different record types
         records = []
@@ -95,6 +165,11 @@ def parse_fit_file(file_path):
             "total_records": len(records)
         }
     
+    except fitparse.utils.FitParseError as e:
+        return {"error": f"Could not read this FIT file: {e}. It may be damaged, or written by an app the "
+                         "FIT parser can't decode (seen with indoor rides uploaded from third-party apps). "
+                         "The activity summary is still available from garmin_data.py, and per-second data "
+                         "from the Strava skill."}
     except Exception as e:
         return {"error": str(e)}
 
@@ -287,9 +362,9 @@ def main():
             print('{"error": "file path required for parse"}')
             sys.exit(1)
         
-        if args.file.endswith('.fit'):
+        if args.file.lower().endswith('.fit'):
             result = parse_fit_file(args.file)
-        elif args.file.endswith('.gpx'):
+        elif args.file.lower().endswith('.gpx'):
             result = parse_gpx_file(args.file)
         else:
             result = {"error": "Unsupported file type. Use .fit or .gpx"}
@@ -302,9 +377,9 @@ def main():
             sys.exit(1)
         
         # First parse the file
-        if args.file.endswith('.fit'):
+        if args.file.lower().endswith('.fit'):
             data = parse_fit_file(args.file)
-        elif args.file.endswith('.gpx'):
+        elif args.file.lower().endswith('.gpx'):
             data = parse_gpx_file(args.file)
         else:
             print('{"error": "Unsupported file type"}')
@@ -330,9 +405,9 @@ def main():
             sys.exit(1)
         
         # Parse and analyze
-        if args.file.endswith('.fit'):
+        if args.file.lower().endswith('.fit'):
             data = parse_fit_file(args.file)
-        elif args.file.endswith('.gpx'):
+        elif args.file.lower().endswith('.gpx'):
             data = parse_gpx_file(args.file)
         else:
             print('{"error": "Unsupported file type"}')
