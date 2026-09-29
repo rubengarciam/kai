@@ -5,13 +5,15 @@
 #
 # Tyres are tied to WHEELSETS (see ../data/tyres.json). For each active tyre set,
 # this sums the distance of qualifying OUTDOOR rides since its fitted_date across
-# the wheelset's Strava gear_ids.
+# the wheelset's Strava gear_ids. fitted_date is read as the athlete's own local
+# date (from Strava's start_date_local on each activity), not UTC.
 #
-# A ride is EXCLUDED (treated as indoor / tyres not used) when any of:
-#   - type/sport_type is VirtualRide
-#   - trainer flag is true
-#   - it is a plain Ride with no GPS start location (indoor, no route)
-# manual_include_ids / manual_exclude_ids in tyres.json override the above.
+# A ride is EXCLUDED when any of:
+#   - it is before the tyre's fitted_date (local date)
+#   - it is indoor (tyres don't wear on a trainer): VirtualRide, trainer flag,
+#     or a plain Ride with no GPS start location
+# manual_include_ids / manual_exclude_ids in tyres.json override the gear-id/indoor
+# checks (not the fitted_date check: that stays a hard boundary either way).
 #
 # Credentials are read from (in priority order):
 #   1. Environment variable STRAVA_ACCESS_TOKEN
@@ -48,13 +50,14 @@ if [ ! -f "$LEDGER" ]; then
   exit 1
 fi
 
-python3 - "$LEDGER" "$JSON" "$VERBOSE" <<'PYEOF'
+python3 - "$LEDGER" "$JSON" "$VERBOSE" "$SCRIPT_DIR" <<'PYEOF'
 import json, os, sys, urllib.request, urllib.error
-from datetime import datetime, timezone
 
 ledger_path = sys.argv[1]
 as_json = sys.argv[2] == "1"
 verbose = sys.argv[3] == "1"
+sys.path.insert(0, sys.argv[4])
+from tyre_activity_filters import classify_activity, fetch_after_epoch
 
 # --- Load credentials ---
 token = os.environ.get("STRAVA_ACCESS_TOKEN")
@@ -91,17 +94,6 @@ def fetch_since(after_epoch):
         page += 1
     return out
 
-def is_indoor(act):
-    """True if the ride did not use the tyres (indoor)."""
-    if act.get("type") == "VirtualRide" or act.get("sport_type") == "VirtualRide":
-        return True
-    if act.get("trainer"):
-        return True
-    # plain Ride with no GPS start location -> indoor, no route
-    if not act.get("start_latlng"):
-        return True
-    return False
-
 wheelsets = ledger.get("wheelsets", {})
 results = []
 
@@ -113,23 +105,15 @@ for tyre in ledger.get("tyres", []):
     inc = set(tyre.get("manual_include_ids", []))
     exc = set(tyre.get("manual_exclude_ids", []))
 
-    fitted = datetime.strptime(tyre["fitted_date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)
-    after_epoch = int(fitted.timestamp()) - 1
-
-    acts = fetch_since(after_epoch)
+    acts = fetch_since(fetch_after_epoch(tyre["fitted_date"]))
 
     counted, excluded, dist_m = [], [], 0.0
     for a in acts:
-        aid = a.get("id")
-        # forced overrides first
-        if aid in exc:
-            excluded.append((a, "manual_exclude"))
+        verdict, reason = classify_activity(a, tyre["fitted_date"], gear_ids, inc, exc)
+        if verdict == "skip":
             continue
-        forced_in = aid in inc
-        if not forced_in and a.get("gear_id") not in gear_ids:
-            continue
-        if not forced_in and is_indoor(a):
-            excluded.append((a, "indoor"))
+        if verdict == "excluded":
+            excluded.append((a, reason))
             continue
         dist_m += a.get("distance", 0)
         counted.append(a)
@@ -182,7 +166,7 @@ for r in results:
     print(f"● {r['wheelset']}  —  {r['model']}")
     print(f"  Bike: {r['usual_bike']}")
     print(f"  Fitted: {r['fitted_date']}   Mileage: {r['km']:.1f} km   "
-          f"({r['rides_counted']} rides counted, {r['rides_excluded']} indoor excluded)")
+          f"({r['rides_counted']} rides counted, {r['rides_excluded']} excluded)")
     line = f"  Next wear/cut check: ~{r['next_check_km']:.0f} km"
     if r['replace_at_km']:
         line += f"   |   End-of-life target: {r['replace_at_km']:.0f} km"
@@ -195,10 +179,10 @@ for r in results:
         print("    Counted:")
         for a in r["_counted"]:
             print(f"      + {a['start_date_local'][:10]}  {a.get('distance',0)/1000:6.1f}km  {a.get('name','')[:40]}")
-        print("    Excluded (indoor):")
+        print("    Excluded:")
         for a, why in r["_excluded"]:
             print(f"      - {a['start_date_local'][:10]}  {a.get('distance',0)/1000:6.1f}km  [{why}]  {a.get('name','')[:34]}")
     print()
 
-print("(Tyres tied to wheelset; indoor rides — VirtualRide, trainer, or GPS-less — excluded.)")
+print("(Tyres tied to wheelset; rides before fitted_date and indoor rides — VirtualRide, trainer, or GPS-less — excluded.)")
 PYEOF
