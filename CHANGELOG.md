@@ -4,7 +4,17 @@ The full notes for each release, with upgrade steps, are on the [releases page](
 
 ## Unreleased
 
+## [2.3.2](https://github.com/rubengarciam/kai/releases/tag/v2.3.2) - 2026-09-29
+
+- **Fixed: `garmin_activity_files.py download --format fit` saved a ZIP archive under a `.fit` name** ([#15](https://github.com/rubengarciam/kai/issues/15)). Garmin sends the original file zipped, so `parse`, `query` and `analyze` failed with "Invalid .FIT File Header". The FIT file is now unpacked on download, and `parse`/`query`/`analyze` also accept a ZIP-wrapped FIT, so files an earlier version left on disk work without re-downloading.
+- **Fixed:** `download` failed if `--output-dir` didn't exist. It is now created (mode `700`).
+- **Fixed:** `.FIT` (capitals), which devices and Garmin Express write, was rejected as an unsupported file type.
+- **Changed:** downloaded activity files are saved owner-only (`600`) and never written through a symlink at the destination. They hold GPS tracks, and the default folder, `/tmp`, is shared.
 - **Changed: `SECURITY.md` renamed to `CREDENTIALS.md`.** It held Kai's own credential-handling rules, but GitHub treats the `SECURITY.md` filename as the repository's vulnerability-reporting policy. A real `SECURITY.md` with a reporting policy replaces it ([#24](https://github.com/rubengarciam/kai/issues/24)). See [upgrading](docs/upgrading.md#securitymd-renamed-to-credentialsmd) if you copied this workspace elsewhere.
+
+## [2.3.1](https://github.com/rubengarciam/kai/releases/tag/v2.3.1) - 2026-09-29
+
+- **Fixed: `tyre-mileage.sh` read a tyre's `fitted_date` as midnight UTC** instead of the athlete's own local date, so a ride on the local morning of the fit day (east of UTC) could be missed entirely, and a ride the evening before (west of UTC) could be wrongly counted ([#22](https://github.com/rubengarciam/kai/issues/22)). It now compares each activity's own local date, which Strava already provides, so no timezone configuration is needed.
 
 ## [2.3.0](https://github.com/rubengarciam/kai/releases/tag/v2.3.0) - 2026-09-29
 

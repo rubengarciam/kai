@@ -110,7 +110,12 @@ Download and analyze activity files to answer questions like:
 
 # Download TCX file
 .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py download --activity-id 12345678 --format tcx
+
+# Choose where it goes (default /tmp); the folder is created if it doesn't exist
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py download --activity-id 12345678 --format fit --output-dir ~/activities
 ```
+
+Files are saved as `activity_<id>.<format>`, readable only by you (`600`; a folder the script creates is `700`), because they contain GPS tracks. For FIT, Garmin sends the original file inside a ZIP archive; the script unpacks it, so you always get a real `.fit` file.
 
 ### Parse Activity Files
 
@@ -121,6 +126,8 @@ Download and analyze activity files to answer questions like:
 # Parse GPX file (GPS track)
 .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py parse --file /tmp/activity_12345678.gpx
 ```
+
+`parse`, `query` and `analyze` also accept a ZIP archive holding one `.fit` file, such as a Garmin Connect web export or a file saved by an earlier version, and `.FIT` in capitals.
 
 **FIT files contain:**
 - GPS coordinates (lat/lon)
@@ -148,6 +155,8 @@ Download and analyze activity files to answer questions like:
 # Get comprehensive statistics
 .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py analyze --file /tmp/activity_12345678.fit
 ```
+
+`duration_seconds` is the time from the first record to the last, so it includes any pauses. Garmin's own activity summary (`garmin_data.py activities`) reports *timer* time, which excludes them, so the two differ when you stopped mid-activity. Use the summary for moving time and `analyze` for the whole span.
 
 **Returns:**
 - Average/max/min heart rate
