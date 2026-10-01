@@ -1,5 +1,7 @@
-# Every new issue is assigned to gertybot, who owns the backlog.
-# When an issue needs a decision or an action from Ruben, gertybot reassigns it to him (see CONTRIBUTING.md).
+# New issues are assigned to the user named in the repository variable ISSUE_ASSIGNEE
+# (Settings > Secrets and variables > Actions > Variables). Repository variables are not copied to forks,
+# so in a fork the variable is empty and this workflow does nothing.
+# When an issue needs a decision or an action from the owner, the assignee reassigns it (see CONTRIBUTING.md).
 name: Assign issues
 
 on:
@@ -10,13 +12,15 @@ permissions: {}
 
 jobs:
   assign:
+    if: vars.ISSUE_ASSIGNEE != ''
     runs-on: ubuntu-latest
     permissions:
       issues: write
     steps:
-      - name: Assign to gertybot
+      - name: Assign to ISSUE_ASSIGNEE
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
-        run: gh issue edit "$ISSUE_NUMBER" --add-assignee gertybot
+          ASSIGNEE: ${{ vars.ISSUE_ASSIGNEE }}
+        run: gh issue edit "$ISSUE_NUMBER" --add-assignee "$ASSIGNEE"

@@ -45,6 +45,8 @@ Name a branch `type/short-description`, in lowercase with hyphens:
 
 The assignee is whoever has the next move. New issues are assigned automatically to [@gertybot](https://github.com/gertybot), the assistant that maintains this repo. When an issue needs a decision or an action from [@rubengarciam](https://github.com/rubengarciam) (the owner), it is reassigned to him, and goes back when he has answered. Every new pull request gets @gertybot as assignee and @rubengarciam as reviewer, because he reviews and merges them. If you open an issue or a pull request, you don't need to assign anyone.
 
+Nobody is hard-coded in the workflows. They read the repository variables `ISSUE_ASSIGNEE` (new issues), `PR_ASSIGNEE` and `PR_REVIEWER` (new pull requests), set under Settings > Secrets and variables > Actions > Variables. Variables are not copied to forks, so a fork assigns nobody until its owner sets them. To use this setup in your own copy, enable Actions and set the variables to your own login (or leave them unset).
+
 ## Keep personal data out
 
 Everything you push is public: code, issues, PR comments, commit messages. Never include real tokens, passwords, cookies, athlete IDs, Strava gear IDs, or your own mileage and training numbers. Describe results ("matched") instead of quoting them. The repo-hygiene test checks that personal files are ignored, but it can't read your comments.
