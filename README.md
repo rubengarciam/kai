@@ -13,6 +13,7 @@ Kai is a folder of plain markdown instructions plus five skills, using two open 
 | **Workout analysis** | Overall read, planned-vs-actual table and lap-by-lap breakdown; data is read before your comments | TrainingPeaks, plus Strava for laps and Garmin for recovery context |
 | **Fitness and fatigue tracking** | CTL / ATL / TSB, weekly TSS, form for race day | TrainingPeaks |
 | **Recovery monitoring** | HRV, resting HR, sleep, Body Battery and readiness trends read alongside load | Garmin |
+| **Activity files and dashboards** | Download an activity (FIT, TCX or GPX) and ask for your heart rate, pace or power at any distance or time; TCX also covers indoor rides whose FIT file can't be decoded. Garmin dashboards are single files that work offline | Garmin |
 | **Training plans** | Periodized plans (base, build, peak, taper) with zones, paces, workouts and a race-day plan, validated with you first | Any one data source, or just a chat |
 | **Analyst mode** | Interprets data and preps questions for your human coach; never overrides the plan | Any data source |
 | **Gear tracking** | Live shoe and bike mileage, per-wheelset tyre wear with commands to fit, replace and retire tyre sets, replacement and maintenance alerts | Strava |
@@ -30,7 +31,7 @@ You (chat) ──► Kai (your agent runtime)
                  │  reads AGENTS.md, SOUL.md, USER.md, memory/
                  │
                  ├─ skills/trainingpeaks ─────► TrainingPeaks  (load, workouts, PRs, weight)
-                 ├─ skills/garmin-health-analysis ► Garmin Connect (sleep, HRV, readiness)
+                 ├─ skills/garmin-health-analysis ► Garmin Connect (sleep, HRV, readiness, activity files)
                  ├─ skills/strava ────────────► Strava         (laps, streams, gear)
                  ├─ skills/gear-maintenance ──► chain wax + tyre ledgers (odometers from Strava or by hand)
                  └─ skills/endurance-training-coach  (zones, periodization, workouts, race day)
@@ -95,9 +96,10 @@ Optional: [chain wax and tyre tracking](docs/installation.md#gear-maintenance-op
 | [OpenClaw](docs/openclaw.md), [Claude Code and Codex](docs/claude-code-codex.md), [Hermes](docs/hermes.md) | Running Kai in each agent |
 | [Features in detail](docs/features.md) | What each capability does |
 | [Architecture and privacy](docs/architecture.md) | How it works, repository layout, customizing, what leaves your machine |
-| [Upgrading](docs/upgrading.md) | v1.x to v2, gear maintenance moved |
+| [Upgrading](docs/upgrading.md) | v1.x to v2, gear maintenance moved, `SECURITY.md` renamed to `CREDENTIALS.md` |
 | [Changelog](CHANGELOG.md) | What changed in each release |
 | [Contributing](CONTRIBUTING.md) | Branches, pull requests, tests, releases |
+| [Security policy](SECURITY.md) | How to report a vulnerability privately |
 | Skills | [trainingpeaks](skills/trainingpeaks/README.md), [garmin-health-analysis](skills/garmin-health-analysis/README.md), [strava](skills/strava/README.md), [gear-maintenance](skills/gear-maintenance/README.md), [endurance-training-coach](skills/endurance-training-coach/README.md) |
 
 ## Upgrading from v1.x
@@ -108,13 +110,14 @@ v2.0 changed the Garmin login: it needs Python 3.12+ and you log in once more. S
 
 - Your credentials and data stay on your machine. Nothing is sent anywhere except the calls to TrainingPeaks / Garmin / Strava and to the language model your agent runtime is configured with, which sees the training data Kai reads.
 - Kai never stores your Garmin password: `login` asks for it on the terminal and keeps only session tokens. Kai's instructions tell the agent never to ask for it in chat.
+- Activity files you download (FIT, TCX, GPX) contain GPS tracks. Kai saves them readable only by you, and Garmin dashboards are generated locally with Chart.js bundled, so viewing one sends nothing anywhere.
 - TrainingPeaks and Garmin access use unofficial interfaces (cookie auth and the community `garminconnect` library) and can break or be rate-limited. Strava uses the official API.
 
 More in [architecture and privacy](docs/architecture.md#privacy).
 
 ## Contributing
 
-Bugs and plans are tracked in [the issues](https://github.com/rubengarciam/kai/issues); issues labelled `help wanted` are good places to start. See [CONTRIBUTING.md](CONTRIBUTING.md) for branches, tests and releases.
+Bugs and plans are tracked in [the issues](https://github.com/rubengarciam/kai/issues); issues labelled `help wanted` are good places to start. See [CONTRIBUTING.md](CONTRIBUTING.md) for branches, tests and releases. Found a security problem? Please report it privately: see [SECURITY.md](SECURITY.md).
 
 ## Credits and license
 

@@ -33,7 +33,7 @@ CHANGELOG.md       What changed in each release
 .github/           Pull request and issue templates
 templates/         Starter USER.md and MEMORY.md
 requirements.txt   Python packages for the Garmin skill (garminconnect 0.3.x, Python 3.12+)
-tests/             Offline tests: Garmin login, chain wax log, tyre ledger, docs checks, repo checks
+tests/             Offline tests: Garmin login, activity files (FIT, TCX), dashboards, chain wax log, tyre ledger and report, docs checks, repo checks
 .claude/skills/    Symlinks to skills/ for Claude Code
 .agents/skills/    Symlinks to skills/ for Codex
 data/              Example nutrition log
