@@ -2,6 +2,10 @@
 
 The full notes for each release, with upgrade steps, are on the [releases page](https://github.com/rubengarciam/kai/releases). This is the short version. Versions follow [semantic versioning](https://semver.org/): a change that breaks documented commands, paths or Python requirements bumps the major version.
 
+## Unreleased
+
+- **Removed a stray file:** `fitdecode-0.0.0-py3-none-any.whl`, a 2 KB placeholder package (metadata only, no code) that a `pip download` check left in the repo folder and that was committed by mistake in v2.3.2. It is still inside the v2.3.2, v2.4.0 and v2.5.0 source archives, but nothing used it. `.gitignore` now excludes build and download artifacts, and a test fails if one is ever tracked.
+
 ## [2.5.0](https://github.com/rubengarciam/kai/releases/tag/v2.5.0) - 2026-10-01
 
 - **Added: `garmin_activity_files.py` reads TCX files** ([#36](https://github.com/rubengarciam/kai/issues/36)). `parse`, `query` and `analyze` accept `.tcx` (any case) and return the same record fields as for FIT (timestamp, heart rate, distance, altitude, speed, power, cadence, position) plus a summary per lap, using only the standard library. This makes indoor rides uploaded by third-party apps analysable: their FIT files can't be decoded, but their TCX exports carry the full data. `analyze` gives the same statistics from a TCX as from the FIT of the same activity.
