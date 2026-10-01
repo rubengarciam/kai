@@ -4,6 +4,7 @@ The full notes for each release, with upgrade steps, are on the [releases page](
 
 ## Unreleased
 
+- **Changed: `tp.py profile` shows your age instead of your date of birth, and no longer prints sex.** Nothing in Kai uses either, so there is no reason to print them. `profile --json` still returns the raw response from TrainingPeaks.
 - **Removed a stray file:** `fitdecode-0.0.0-py3-none-any.whl`, a 2 KB placeholder package (metadata only, no code) that a `pip download` check left in the repo folder and that was committed by mistake in v2.3.2. It is still inside the v2.3.2, v2.4.0 and v2.5.0 source archives, but nothing used it. `.gitignore` now excludes build and download artifacts, and a test fails if one is ever tracked.
 
 ## [2.5.0](https://github.com/rubengarciam/kai/releases/tag/v2.5.0) - 2026-10-01

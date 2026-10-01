@@ -56,7 +56,7 @@ python3 skills/trainingpeaks/scripts/tp.py auth-status
 python3 skills/trainingpeaks/scripts/tp.py profile
 ```
 
-Returns name, email, athlete ID, account type, bike FTP.
+Returns name, email, athlete ID, account type, weight, age (not the date of birth) and FTPs.
 
 ### `workouts` — List workouts
 
