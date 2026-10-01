@@ -41,6 +41,10 @@ Name a branch `type/short-description`, in lowercase with hyphens:
 - Use the same type in the PR title, optionally with the area: `feat(garmin): support garminconnect 0.3.x`.
 - A commit that changes behaviour comes with a test. Keep a change and its docs in the same PR.
 
+## Who an issue is assigned to
+
+The assignee is whoever has the next move. New issues are assigned automatically to [@gertybot](https://github.com/gertybot), the assistant that maintains this repo. When an issue needs a decision or an action from [@rubengarciam](https://github.com/rubengarciam) (the owner), it is reassigned to him, and goes back when he has answered. Every new pull request gets @gertybot as assignee and @rubengarciam as reviewer, because he reviews and merges them. If you open an issue or a pull request, you don't need to assign anyone.
+
 ## Keep personal data out
 
 Everything you push is public: code, issues, PR comments, commit messages. Never include real tokens, passwords, cookies, athlete IDs, Strava gear IDs, or your own mileage and training numbers. Describe results ("matched") instead of quoting them. The repo-hygiene test checks that personal files are ignored, but it can't read your comments.

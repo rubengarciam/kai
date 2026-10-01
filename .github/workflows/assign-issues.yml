@@ -1,0 +1,22 @@
+# Every new issue is assigned to gertybot, who owns the backlog.
+# When an issue needs a decision or an action from Ruben, gertybot reassigns it to him (see CONTRIBUTING.md).
+name: Assign issues
+
+on:
+  issues:
+    types: [opened, reopened]
+
+permissions: {}
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Assign to gertybot
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: gh issue edit "$ISSUE_NUMBER" --add-assignee gertybot
