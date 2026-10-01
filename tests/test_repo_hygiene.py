@@ -34,6 +34,17 @@ class Hygiene(unittest.TestCase):
         for f in IGNORED:
             self.assertEqual(git("check-ignore", "-q", f).returncode, 0, f"{f} would not be ignored")
 
+    def test_no_build_artifacts_are_tracked(self):
+        # A stray `pip download` once left a .whl in the repo folder and a blanket `git add -A` committed it
+        artifacts = [f for f in git("ls-files").stdout.split()
+                     if f.lower().endswith((".whl", ".tar.gz", ".tgz", ".egg", ".zip", ".pyc", ".pyo"))
+                     or "/__pycache__/" in f or ".egg-info/" in f]
+        self.assertEqual(artifacts, [], "build or download artifacts must not be committed")
+
+    def test_build_artifacts_are_ignored(self):
+        for f in ("x-1.0-py3-none-any.whl", "x-1.0.tar.gz", "pkg.egg-info/PKG-INFO", "dist/x.whl", "build/lib/x.py"):
+            self.assertEqual(git("check-ignore", "-q", f).returncode, 0, f"{f} would not be ignored")
+
     def test_no_personal_files_are_tracked(self):
         tracked = set(git("ls-files").stdout.split())
         for f in IGNORED:

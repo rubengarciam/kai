@@ -12,5 +12,11 @@
 /skills/strava/data/chain-wax.json
 /.env
 .venv/
+# Build and download artifacts (a stray `pip download` once left a .whl in here)
+*.whl
+*.tar.gz
+*.egg-info/
+dist/
+build/
 __pycache__/
 *.pyc
