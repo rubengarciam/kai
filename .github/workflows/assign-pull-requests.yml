@@ -1,6 +1,8 @@
-# Every new pull request gets gertybot as assignee and rubengarciam as reviewer
-# (see .github/auto_assign.yml). The action never checks out or runs the PR's code,
-# which is what makes pull_request_target safe here and lets it work for pull requests from forks.
+# New pull requests get the user in the repository variable PR_ASSIGNEE as assignee and the user in PR_REVIEWER
+# as reviewer (Settings > Secrets and variables > Actions > Variables). Either may be left unset. Repository
+# variables are not copied to forks, so in a fork this workflow does nothing.
+# The job never checks out or runs the PR's code, which is what makes pull_request_target safe here and lets it
+# work for pull requests from forks. Only numbers and logins from repository variables reach the shell, as env vars.
 name: Assign pull requests
 
 on:
@@ -11,8 +13,24 @@ permissions: {}
 
 jobs:
   assign:
+    if: vars.PR_ASSIGNEE != '' || vars.PR_REVIEWER != ''
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
     steps:
-      - uses: kentaro-m/auto-assign-action@0a2c53d3721e4c5cfcce6afd4014aecc337979f6 # v2.0.2
+      - name: Add assignee and reviewer
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          ASSIGNEE: ${{ vars.PR_ASSIGNEE }}
+          REVIEWER: ${{ vars.PR_REVIEWER }}
+        run: |
+          if [ -n "$ASSIGNEE" ]; then
+            gh api -X POST "repos/$GH_REPO/issues/$PR_NUMBER/assignees" -f "assignees[]=$ASSIGNEE" --silent
+          fi
+          # GitHub rejects a review request for the PR's own author.
+          if [ -n "$REVIEWER" ] && [ "$REVIEWER" != "$PR_AUTHOR" ]; then
+            gh api -X POST "repos/$GH_REPO/pulls/$PR_NUMBER/requested_reviewers" -f "reviewers[]=$REVIEWER" --silent
+          fi
