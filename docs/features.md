@@ -68,7 +68,7 @@ Overall: 5 x 6' at threshold, well executed; HR drifted 4 bpm across the set
 - **Other:** body composition and weigh-ins, SpO2, steps, floors, intensity minutes, hydration, all-day and intraday heart rate and stress.
 - **Ask by time:** "what was my heart rate at 3pm yesterday?" is answered from the intraday data.
 - **Dashboards:** sleep, Body Battery, HRV and activity charts, or a combined dashboard, generated as a local HTML page. Each page is one self-contained file (Chart.js is embedded), so it draws with no internet access and still works if you move or email it.
-- **Activity files:** GPX (and FIT) downloads with elevation, pace or heart rate looked up at any distance or time.
+- **Activity files:** FIT, TCX and GPX downloads, with elevation, pace or heart rate looked up at any distance or time. TCX covers activities whose FIT file can't be decoded, such as some indoor rides uploaded by third-party apps.
 
 This is what lets Kai answer "am I ready to add intensity?" or "why do I feel flat this week?" with data instead of guesses.
 
