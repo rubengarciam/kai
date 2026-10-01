@@ -92,7 +92,7 @@ Ask questions like:
 .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data_extended.py hr_intraday
 ```
 
-## 🗺️ Activity File Analysis (FIT/GPX)
+## 🗺️ Activity File Analysis (FIT/TCX/GPX)
 
 Download and analyze activity files to answer questions like:
 - "What was my elevation at mile 2?"
@@ -123,9 +123,16 @@ Files are saved as `activity_<id>.<format>`, readable only by you (`600`; a fold
 # Parse FIT file (detailed metrics)
 .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py parse --file /tmp/activity_12345678.fit
 
+# Parse TCX file (per-second heart rate, distance, power, cadence, speed, altitude)
+.venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py parse --file /tmp/activity_12345678.tcx
+
 # Parse GPX file (GPS track)
 .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py parse --file /tmp/activity_12345678.gpx
 ```
+
+**Which format to download.** FIT is the richest for activities recorded on a Garmin device. **TCX is the one to use when a FIT file can't be decoded**, which happens with some indoor rides uploaded by third-party apps (the error says `Could not read this FIT file`): download the same activity with `--format tcx` and `parse`, `query` and `analyze` work on it exactly as they do on FIT. `analyze` gives the same statistics from a TCX as from the FIT of the same activity. GPX parsing currently fails on files that carry heart rate ([#42](https://github.com/rubengarciam/kai/issues/42)), so prefer TCX over GPX for analysis.
+
+**TCX files contain**, when the activity has them: timestamp (UTC), heart rate, distance, altitude, speed, power, cadence (bike and run) and position, plus a summary per lap. A pool swim has little more than time and heart rate. Fields a trackpoint lacks are simply left out, as with FIT.
 
 `parse`, `query` and `analyze` also accept a ZIP archive holding one `.fit` file, such as a Garmin Connect web export or a file saved by an earlier version, and `.FIT` in capitals.
 
@@ -200,6 +207,7 @@ pip install -r requirements.txt   # from the Kai repo root (Python 3.12+)
 - **garminconnect**: Garmin Connect API wrapper
 - **fitparse**: Parse FIT files (Garmin's binary format)
 - **gpxpy**: Parse GPX files (GPS track format)
+- TCX needs nothing extra: it is read with Python's standard library
 
 ## 🛠️ Advanced Tips
 

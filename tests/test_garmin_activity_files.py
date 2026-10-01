@@ -1,6 +1,6 @@
 """Offline tests for skills/garmin-health-analysis/scripts/garmin_activity_files.py (synthetic data, no network).
 
-Covers https://github.com/rubengarciam/kai/issues/15: `download --format fit` saved the ZIP archive Garmin
+Covers https://github.com/rubengarciam/kai/issues/15 (FIT) and https://github.com/rubengarciam/kai/issues/36 (TCX): `download --format fit` saved the ZIP archive Garmin
 returns for the "original" format under a .fit name, so parse/analyze/query failed with
 "Invalid .FIT File Header"; and `download` failed if the output directory didn't exist.
 
@@ -17,6 +17,7 @@ import sys
 import tempfile
 import unittest
 import zipfile
+from datetime import timezone
 from pathlib import Path
 from unittest import mock
 
@@ -285,11 +286,222 @@ class ParseAndAnalyze(unittest.TestCase):
             self.assertIn("Could not read this FIT file", out["error"])
             self.assertIn("Invalid struct format", out["error"])
             self.assertIn("garmin_data.py", out["error"])
+            self.assertIn("--format tcx", out["error"])   # #36: point to the export that does work
 
     def test_other_extensions_are_still_unsupported(self):
-        p = subprocess.run([sys.executable, str(SCRIPT), "parse", "--file", str(self.write("a.tcx", b"<x/>"))],
-                           capture_output=True, text=True, timeout=60)
-        self.assertIn("Unsupported file type", p.stdout)
+        for action, code in (("parse", 0), ("query", 1), ("analyze", 1)):
+            p = subprocess.run([sys.executable, str(SCRIPT), action, "--file", str(self.write("a.kml", b"<x/>"))],
+                               capture_output=True, text=True, timeout=60)
+            self.assertIn("Unsupported file type", p.stdout, action)
+            self.assertEqual(p.returncode, code, action)
+
+
+# --------------------------------------------------------------------------- TCX (#36)
+
+TCX_V2 = "http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"
+TCX_EXT_V2 = "http://www.garmin.com/xmlschemas/ActivityExtension/v2"
+
+
+def tcx_point(seconds, hr=None, dist=None, alt=None, pos=None, cadence=None, run_cadence=None, speed=None, watts=None):
+    """A <Trackpoint> shaped like Garmin's export: every field optional, speed/watts/run cadence in <Extensions>."""
+    parts = [f"<Time>2026-01-01T09:00:{seconds:02d}.000Z</Time>"]
+    if pos:
+        parts.append(f"<Position><LatitudeDegrees>{pos[0]}</LatitudeDegrees><LongitudeDegrees>{pos[1]}</LongitudeDegrees></Position>")
+    if alt is not None:
+        parts.append(f"<AltitudeMeters>{alt}</AltitudeMeters>")
+    if dist is not None:
+        parts.append(f"<DistanceMeters>{dist}</DistanceMeters>")
+    if hr is not None:
+        parts.append(f"<HeartRateBpm><Value>{hr}</Value></HeartRateBpm>")
+    if cadence is not None:
+        parts.append(f"<Cadence>{cadence}</Cadence>")
+    ext = "".join(x for x in (f"<Speed>{speed}</Speed>" if speed is not None else "",
+                              f"<Watts>{watts}</Watts>" if watts is not None else "",
+                              f"<RunCadence>{run_cadence}</RunCadence>" if run_cadence is not None else "") if x)
+    parts.append(f"<Extensions><TPX xmlns=\"{TCX_EXT_V2}\">{ext}</TPX></Extensions>" if ext else "<Extensions/>")
+    return "<Trackpoint>" + "".join(parts) + "</Trackpoint>"
+
+
+def build_tcx(laps, ns=TCX_V2):
+    """laps: list of (lap_xml_children, [trackpoint_xml, ...])."""
+    body = ""
+    for children, points in laps:
+        body += f'<Lap StartTime="2026-01-01T09:00:00.000Z">{children}<Track>{"".join(points)}</Track></Lap>'
+    return (f'<?xml version="1.0" encoding="UTF-8"?>\n<TrainingCenterDatabase xmlns="{ns}">'
+            f"<Activities><Activity Sport=\"Biking\"><Id>2026-01-01T09:00:00.000Z</Id>{body}</Activity></Activities>"
+            "</TrainingCenterDatabase>").encode()
+
+
+FULL_POINT = tcx_point(7, hr=151, dist=1234.5, alt=88.2, pos=(-33.5, 151.2), cadence=88, speed=9.75, watts=210)
+LAP_XML = ("<TotalTimeSeconds>600.5</TotalTimeSeconds><DistanceMeters>5000.0</DistanceMeters>"
+           "<MaximumSpeed>12.5</MaximumSpeed><Calories>150</Calories>"
+           "<AverageHeartRateBpm><Value>140</Value></AverageHeartRateBpm><MaximumHeartRateBpm><Value>175</Value></MaximumHeartRateBpm>"
+           "<Intensity>Active</Intensity><Cadence>85</Cadence><TriggerMethod>Manual</TriggerMethod>"
+           f'<Extensions><LX xmlns="{TCX_EXT_V2}"><AvgSpeed>8.3</AvgSpeed><AvgWatts>200</AvgWatts>'
+           "<MaxWatts>480</MaxWatts><MaxBikeCadence>120</MaxBikeCadence></LX></Extensions>")
+
+
+class ParseTcx(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp())
+
+    def parse(self, data, name="a.tcx"):
+        path = self.root / name
+        path.write_bytes(data if isinstance(data, bytes) else data.encode())
+        return gaf.parse_tcx_file(str(path))
+
+    def test_every_field_is_mapped_to_the_name_the_fit_parser_uses(self):
+        rec = self.parse(build_tcx([("", [FULL_POINT])]))["records"][0]
+        self.assertEqual(rec, {"timestamp": gaf.datetime(2026, 1, 1, 9, 0, 7, tzinfo=timezone.utc),
+                               "latitude": -33.5, "longitude": 151.2, "altitude": 88.2, "distance": 1234.5,
+                               "heart_rate": 151, "cadence": 88, "speed": 9.75, "power": 210})
+        self.assertIsInstance(rec["heart_rate"], int)
+        self.assertIsInstance(rec["power"], int)
+        self.assertIsNotNone(rec["timestamp"].tzinfo)   # UTC-aware, so time queries need no guessing
+
+    def test_run_cadence_comes_from_the_extension_when_there_is_no_plain_cadence(self):
+        rec = self.parse(build_tcx([("", [tcx_point(1, hr=150, run_cadence=86, speed=3.1)])]))["records"][0]
+        self.assertEqual((rec["cadence"], rec["speed"]), (86, 3.1))
+
+    def test_fields_a_point_lacks_are_left_out(self):
+        pool = tcx_point(1, hr=120)                       # a pool swim: time and heart rate only
+        gps_gap = tcx_point(2, hr=130, dist=10.0)         # no position, no altitude, no speed
+        records = self.parse(build_tcx([("", [pool, gps_gap])]))["records"]
+        self.assertEqual(sorted(records[0]), ["heart_rate", "timestamp"])
+        self.assertEqual(sorted(records[1]), ["distance", "heart_rate", "timestamp"])
+
+    def test_a_point_with_nothing_in_it_is_skipped(self):
+        records = self.parse(build_tcx([("", ["<Trackpoint></Trackpoint>", tcx_point(1, hr=100)])]))["records"]
+        self.assertEqual(len(records), 1)
+
+    def test_unreadable_values_are_dropped_not_fatal(self):
+        bad = ("<Trackpoint><Time>not a time</Time><HeartRateBpm><Value>abc</Value></HeartRateBpm>"
+               "<DistanceMeters>12.5</DistanceMeters><AltitudeMeters></AltitudeMeters></Trackpoint>")
+        rec = self.parse(build_tcx([("", [bad])]))["records"][0]
+        self.assertEqual(rec, {"distance": 12.5})
+
+    def test_other_tcx_and_extension_versions_parse_the_same(self):
+        v1 = build_tcx([("", [FULL_POINT])], ns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v1")
+        v1 = v1.replace(TCX_EXT_V2.encode(), b"http://www.garmin.com/xmlschemas/ActivityExtension/v1")
+        self.assertEqual(self.parse(v1)["records"], self.parse(build_tcx([("", [FULL_POINT])]))["records"])
+
+    def test_points_keep_file_order_across_laps_and_tracks(self):
+        data = build_tcx([("", [tcx_point(1, hr=101), tcx_point(2, hr=102)]), ("", [tcx_point(3, hr=103)])])
+        self.assertEqual([r["heart_rate"] for r in self.parse(data)["records"]], [101, 102, 103])
+
+    def test_laps_use_the_fit_lap_field_names(self):
+        result = self.parse(build_tcx([(LAP_XML, [tcx_point(1, hr=120)])]))
+        lap = result["laps"][0]
+        self.assertEqual({k: v for k, v in lap.items() if k != "start_time"},
+                         {"total_elapsed_time": 600.5, "total_distance": 5000.0, "max_speed": 12.5, "total_calories": 150.0,
+                          "avg_cadence": 85.0, "avg_heart_rate": 140, "max_heart_rate": 175, "intensity": "Active",
+                          "avg_speed": 8.3, "avg_power": 200.0, "max_power": 480.0, "max_cadence": 120.0})
+        self.assertEqual(lap["start_time"].isoformat(), "2026-01-01T09:00:00+00:00")
+        self.assertEqual((result["sessions"], result["total_records"]), ([], 1))
+
+    def test_run_lap_cadence_comes_from_the_lap_extension(self):
+        lx = f'<Extensions><LX xmlns="{TCX_EXT_V2}"><AvgRunCadence>84</AvgRunCadence><MaxRunCadence>96</MaxRunCadence></LX></Extensions>'
+        lap = self.parse(build_tcx([(lx, [tcx_point(1, hr=120)])]))["laps"][0]
+        self.assertEqual((lap["avg_cadence"], lap["max_cadence"]), (84.0, 96.0))
+
+
+class TcxErrors(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp())
+
+    def parse(self, data):
+        path = self.root / "a.tcx"
+        path.write_bytes(data)
+        return gaf.parse_tcx_file(str(path))
+
+    def test_not_xml(self):
+        for junk in (b"", b"this is not xml", b"<TrainingCenterDatabase><Activities>"):
+            self.assertIn("Could not read this TCX file", self.parse(junk)["error"], junk)
+
+    def test_xml_that_is_not_tcx(self):
+        self.assertIn("Not a TCX file (its root element is <gpx>)", self.parse(b'<gpx xmlns="http://www.topografix.com/GPX/1/1"/>')["error"])
+
+    def test_a_dtd_or_entity_declaration_is_refused(self):
+        bomb = (b'<?xml version="1.0"?><!DOCTYPE lolz [<!ENTITY lol "lol"><!ENTITY lol2 "&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;">'
+                b'<!ENTITY lol3 "&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;">]>'
+                b'<TrainingCenterDatabase xmlns="' + TCX_V2.encode() + b'"><Activities>&lol3;</Activities></TrainingCenterDatabase>')
+        for doc in (bomb, b"<!doctype x><TrainingCenterDatabase/>", b"<!ENTITY a 'b'><TrainingCenterDatabase/>"):
+            self.assertIn("DTD or XML entities", self.parse(doc)["error"])
+
+    def test_a_missing_file_is_an_error_dict(self):
+        self.assertIn("error", gaf.parse_tcx_file(str(self.root / "nope.tcx")))
+
+    def test_an_oversized_file_is_refused_before_it_is_read(self):
+        with mock.patch.object(gaf, "MAX_TCX_BYTES", 10):
+            self.assertIn("larger than", self.parse(build_tcx([("", [FULL_POINT])]))["error"])
+
+    def test_a_tcx_with_no_trackpoints_parses_to_nothing(self):
+        result = self.parse(build_tcx([("", [])]))
+        self.assertEqual((result["records"], result["total_records"]), ([], 0))
+        self.assertIn("error", gaf.analyze_activity(result))     # "No data records to analyze", not a crash
+
+
+class ParseActivityFile(unittest.TestCase):
+    def test_dispatch_is_by_extension_in_any_case(self):
+        root = Path(tempfile.mkdtemp())
+        for name in ("a.tcx", "A.TCX", "a.Tcx"):
+            (root / name).write_bytes(build_tcx([("", [FULL_POINT])]))
+            self.assertEqual(gaf.parse_activity_file(str(root / name))["total_records"], 1, name)
+
+    def test_unknown_extensions_return_none(self):
+        for name in ("a.kml", "a.txt", "tcx", "a.tcx.bak", "a"):
+            self.assertIsNone(gaf.parse_activity_file(name), name)
+
+
+@unittest.skipUnless(gaf.HAS_FITPARSE, "needs fitparse (pip install -r requirements.txt)")
+class TcxEndToEnd(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp())
+
+    def run_cli(self, *args):
+        return subprocess.run([sys.executable, str(SCRIPT), *args], capture_output=True, text=True, timeout=60)
+
+    def tcx_file(self, name="activity.tcx"):
+        points = [tcx_point(sec, hr=hr, dist=dist_cm / 100) for sec, hr, dist_cm in SAMPLES]
+        path = self.root / name
+        path.write_bytes(build_tcx([("", points)]))
+        return path
+
+    def test_the_same_activity_as_fit_and_as_tcx_gives_identical_statistics(self):
+        fit = self.root / "a.fit"
+        fit.write_bytes(FIT)
+        from_fit = gaf.analyze_activity(gaf.parse_fit_file(str(fit)))
+        from_tcx = gaf.analyze_activity(gaf.parse_tcx_file(str(self.tcx_file())))
+        self.assertEqual(from_fit["heart_rate"], {"avg": 120.0, "max": 140, "min": 100})   # guards the comparison itself
+        self.assertEqual(from_tcx, from_fit)
+
+    def test_parse_query_and_analyze_accept_tcx_in_any_case(self):
+        for name in ("activity.tcx", "ACTIVITY.TCX"):
+            path = self.tcx_file(name)
+            parsed = json.loads(self.run_cli("parse", "--file", str(path)).stdout)
+            self.assertEqual(parsed["total_records"], 5, name)
+            analyzed = json.loads(self.run_cli("analyze", "--file", str(path)).stdout)
+            self.assertEqual((analyzed["total_points"], analyzed["duration_seconds"], analyzed["distance_meters"]), (5, 4.0, 40.0), name)
+            queried = json.loads(self.run_cli("query", "--file", str(path), "--distance", "20").stdout)
+            self.assertEqual(queried["heart_rate"], 120, name)
+
+    def test_query_by_time_works_with_the_utc_timestamps_in_tcx(self):
+        path = self.tcx_file()
+        out = json.loads(self.run_cli("query", "--file", str(path), "--time", "2026-01-01T09:00:03Z").stdout)
+        self.assertEqual(out["heart_rate"], 130)
+
+    def test_a_real_looking_swim_with_no_distance_still_analyzes(self):
+        path = self.root / "swim.tcx"
+        path.write_bytes(build_tcx([("", [tcx_point(sec, hr=110 + sec) for sec in range(6)])]))
+        out = json.loads(self.run_cli("analyze", "--file", str(path)).stdout)
+        self.assertNotIn("error", out)
+        self.assertEqual((out["heart_rate"]["avg"], out["distance_meters"]), (112.5, None))
+
+    def test_a_downloaded_tcx_is_saved_as_is_and_then_parses(self):
+        payload = build_tcx([("", [FULL_POINT])])
+        result = gaf.download_activity_file(FakeClient(payload), 9, "tcx", str(self.root))
+        self.assertEqual(Path(result["file"]).read_bytes(), payload)
+        self.assertEqual(gaf.parse_activity_file(result["file"])["total_records"], 1)
 
 
 if __name__ == "__main__":

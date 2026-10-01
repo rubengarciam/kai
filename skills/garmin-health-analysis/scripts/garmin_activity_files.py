@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """
-Download and analyze Garmin activity FIT/GPX files.
+Download and analyze Garmin activity FIT, GPX and TCX files.
 Extract GPS, elevation, pace, heart rate, power, cadence, etc.
 """
 
 import io
 import json
+import re
 import sys
 import os
+import xml.etree.ElementTree as ET
 import zipfile
 from datetime import datetime
 from pathlib import Path
@@ -168,8 +170,9 @@ def parse_fit_file(file_path):
     except fitparse.utils.FitParseError as e:
         return {"error": f"Could not read this FIT file: {e}. It may be damaged, or written by an app the "
                          "FIT parser can't decode (seen with indoor rides uploaded from third-party apps). "
-                         "The activity summary is still available from garmin_data.py, and per-second data "
-                         "from the Strava skill."}
+                         "Try the same activity as TCX: download it with --format tcx and parse that file, "
+                         "which also carries per-second data such as heart rate, distance and power. "
+                         "The activity summary is available from garmin_data.py."}
     except Exception as e:
         return {"error": str(e)}
 
@@ -209,6 +212,131 @@ def parse_gpx_file(file_path):
     
     except Exception as e:
         return {"error": str(e)}
+
+
+# TCX files are a few MB at most. This only bounds a corrupt or hostile one.
+MAX_TCX_BYTES = 100 * 1024 * 1024
+
+
+def _tcx_text(parent, name):
+    """Text of a child element, whatever its XML namespace (TCX versions and Garmin's extensions differ)."""
+    child = parent.find(f"{{*}}{name}")
+    if child is None or child.text is None or not child.text.strip():
+        return None
+    return child.text.strip()
+
+
+def _tcx_number(parent, name):
+    try:
+        return float(_tcx_text(parent, name))
+    except (TypeError, ValueError):
+        return None
+
+
+def _tcx_time(text):
+    # TCX times look like 2026-09-25T09:00:00.000Z; the result is timezone-aware (UTC)
+    try:
+        return datetime.fromisoformat(text.strip().replace("Z", "+00:00"))
+    except (AttributeError, ValueError):
+        return None
+
+
+def _tcx_trackpoint(tp):
+    """One <Trackpoint> as a record with the field names the FIT parser uses. A field the file doesn't
+    have for this point is left out, as the FIT parser does: pool swims carry only time and heart rate,
+    and any point can lack position or speed."""
+    point = {}
+    timestamp = _tcx_time(_tcx_text(tp, "Time"))
+    if timestamp:
+        point["timestamp"] = timestamp
+    position = tp.find("{*}Position")
+    if position is not None:
+        lat, lon = _tcx_number(position, "LatitudeDegrees"), _tcx_number(position, "LongitudeDegrees")
+        if lat is not None and lon is not None:
+            point["latitude"], point["longitude"] = lat, lon
+    for name, key in (("AltitudeMeters", "altitude"), ("DistanceMeters", "distance")):
+        value = _tcx_number(tp, name)
+        if value is not None:
+            point[key] = value
+    heart_rate = tp.find("{*}HeartRateBpm")
+    if heart_rate is not None and _tcx_number(heart_rate, "Value") is not None:
+        point["heart_rate"] = int(_tcx_number(heart_rate, "Value"))
+    cadence = _tcx_number(tp, "Cadence")            # bike cadence is a plain child...
+    extensions = tp.find("{*}Extensions")
+    for tpx in (extensions if extensions is not None else []):
+        for name, key in (("Speed", "speed"), ("Watts", "power")):
+            value = _tcx_number(tpx, name)
+            if value is not None:
+                point[key] = int(value) if key == "power" else value
+        if cadence is None:                         # ...run cadence lives in the extension
+            cadence = _tcx_number(tpx, "RunCadence")
+    if cadence is not None:
+        point["cadence"] = int(cadence)
+    return point
+
+
+def _tcx_lap(lap):
+    """One <Lap> as a summary with the field names the FIT parser uses for laps."""
+    summary = {}
+    start = _tcx_time(lap.get("StartTime"))
+    if start:
+        summary["start_time"] = start
+    for name, key in (("TotalTimeSeconds", "total_elapsed_time"), ("DistanceMeters", "total_distance"),
+                      ("MaximumSpeed", "max_speed"), ("Calories", "total_calories"), ("Cadence", "avg_cadence")):
+        value = _tcx_number(lap, name)
+        if value is not None:
+            summary[key] = value
+    for name, key in (("AverageHeartRateBpm", "avg_heart_rate"), ("MaximumHeartRateBpm", "max_heart_rate")):
+        holder = lap.find(f"{{*}}{name}")
+        if holder is not None and _tcx_number(holder, "Value") is not None:
+            summary[key] = int(_tcx_number(holder, "Value"))
+    if _tcx_text(lap, "Intensity"):
+        summary["intensity"] = _tcx_text(lap, "Intensity")
+    extensions = lap.find("{*}Extensions")
+    for lx in (extensions if extensions is not None else []):
+        for name, key in (("AvgSpeed", "avg_speed"), ("AvgWatts", "avg_power"), ("MaxWatts", "max_power"),
+                          ("AvgRunCadence", "avg_cadence"), ("MaxRunCadence", "max_cadence"),
+                          ("MaxBikeCadence", "max_cadence")):
+            value = _tcx_number(lx, name)
+            if value is not None:
+                summary.setdefault(key, value)
+    return summary
+
+
+def parse_tcx_file(file_path):
+    """Parse a TCX file into the same shape the FIT parser returns (records, laps, total_records).
+
+    TCX is the export that still carries per-second data (heart rate, distance, power, cadence, speed,
+    altitude) for activities whose FIT file the FIT parser can't decode. It has no session summary, so
+    `sessions` is always empty. Uses only the standard library.
+    """
+    try:
+        path = Path(file_path)
+        if path.stat().st_size > MAX_TCX_BYTES:
+            return {"error": f"{path.name} is larger than the {MAX_TCX_BYTES:,} byte limit for TCX files"}
+        data = path.read_bytes()
+        # A TCX file never has a DTD or entity declarations. Refusing them closes the usual XML
+        # entity-expansion trick, which the standard library parser doesn't fully guard against.
+        if re.search(rb"<!(?:DOCTYPE|ENTITY)", data, re.IGNORECASE):
+            return {"error": "This file declares a DTD or XML entities, which a TCX file never does; "
+                             "not parsing it"}
+        root = ET.fromstring(data)
+        if root.tag.rsplit("}", 1)[-1] != "TrainingCenterDatabase":
+            return {"error": f"Not a TCX file (its root element is <{root.tag.rsplit('}', 1)[-1]}>)"}
+        records = [point for point in map(_tcx_trackpoint, root.findall(".//{*}Trackpoint")) if point]
+        laps = [_tcx_lap(lap) for lap in root.findall(".//{*}Lap")]
+        return {"records": records, "laps": laps, "sessions": [], "total_records": len(records)}
+    except ET.ParseError as e:
+        return {"error": f"Could not read this TCX file: {e}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def parse_activity_file(file_path):
+    """Parse a FIT, GPX or TCX file chosen by its extension (any case); None if it's none of those."""
+    parser = {".fit": parse_fit_file, ".gpx": parse_gpx_file, ".tcx": parse_tcx_file}.get(
+        Path(file_path).suffix.lower())
+    return parser(file_path) if parser else None
 
 
 def query_data_at_distance(data, distance_meters):
@@ -337,7 +465,7 @@ def main():
     parser.add_argument("--activity-id", type=int, help="Activity ID")
     parser.add_argument("--format", choices=["fit", "gpx", "tcx"], default="fit",
                        help="File format for download")
-    parser.add_argument("--file", help="Path to local FIT/GPX file")
+    parser.add_argument("--file", help="Path to a local FIT, GPX or TCX file")
     parser.add_argument("--distance", type=float, help="Query data at distance (meters)")
     parser.add_argument("--time", help="Query data at time (ISO format)")
     parser.add_argument("--output-dir", default="/tmp", help="Output directory")
@@ -362,12 +490,9 @@ def main():
             print('{"error": "file path required for parse"}')
             sys.exit(1)
         
-        if args.file.lower().endswith('.fit'):
-            result = parse_fit_file(args.file)
-        elif args.file.lower().endswith('.gpx'):
-            result = parse_gpx_file(args.file)
-        else:
-            result = {"error": "Unsupported file type. Use .fit or .gpx"}
+        result = parse_activity_file(args.file)
+        if result is None:
+            result = {"error": "Unsupported file type. Use .fit, .gpx or .tcx"}
         
         print(json.dumps(result, indent=2, default=str))
     
@@ -377,11 +502,8 @@ def main():
             sys.exit(1)
         
         # First parse the file
-        if args.file.lower().endswith('.fit'):
-            data = parse_fit_file(args.file)
-        elif args.file.lower().endswith('.gpx'):
-            data = parse_gpx_file(args.file)
-        else:
+        data = parse_activity_file(args.file)
+        if data is None:
             print('{"error": "Unsupported file type"}')
             sys.exit(1)
         
@@ -405,11 +527,8 @@ def main():
             sys.exit(1)
         
         # Parse and analyze
-        if args.file.lower().endswith('.fit'):
-            data = parse_fit_file(args.file)
-        elif args.file.lower().endswith('.gpx'):
-            data = parse_gpx_file(args.file)
-        else:
+        data = parse_activity_file(args.file)
+        if data is None:
             print('{"error": "Unsupported file type"}')
             sys.exit(1)
         
