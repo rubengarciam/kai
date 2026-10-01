@@ -12,6 +12,22 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
+import atexit
+import shutil
+
+
+_TEMP_DIRS = []
+
+
+def make_temp_dir():
+    """A temp directory that is removed when the test run ends. (Tests used to leave about a hundred
+    folders behind in /tmp per run, and /tmp is held in RAM on some machines.)"""
+    path = tempfile.mkdtemp()
+    _TEMP_DIRS.append(path)
+    return path
+
+
+atexit.register(lambda: [shutil.rmtree(p, ignore_errors=True) for p in _TEMP_DIRS])
 
 REPO = Path(__file__).resolve().parent.parent
 SCRIPTS = REPO / "skills" / "garmin-health-analysis" / "scripts"
@@ -30,7 +46,7 @@ def load_auth(token_dir):
 
 
 def run_cli(*args, env_extra=None, stdin=subprocess.DEVNULL, detach=False):
-    env = {**os.environ, "GARMIN_TOKEN_DIR": tempfile.mkdtemp()}
+    env = {**os.environ, "GARMIN_TOKEN_DIR": make_temp_dir()}
     env.pop("GARMIN_PASSWORD", None)
     env.pop("GARMIN_EMAIL", None)
     env.update(env_extra or {})
@@ -65,7 +81,7 @@ class CommandLine(unittest.TestCase):
         self.assertIn("Not authenticated", p.stderr)
 
     def test_status_detects_tokens_from_older_version(self):
-        d = tempfile.mkdtemp()
+        d = make_temp_dir()
         (Path(d) / "oauth1_token.json").write_text("{}")
         p = run_cli("status", env_extra={"GARMIN_TOKEN_DIR": d})
         self.assertEqual(p.returncode, 1)
@@ -74,7 +90,7 @@ class CommandLine(unittest.TestCase):
 
 class Credentials(unittest.TestCase):
     def setUp(self):
-        self.dir = tempfile.mkdtemp()
+        self.dir = make_temp_dir()
         self.auth = load_auth(self.dir)
 
     def test_password_from_stdin(self):
@@ -108,7 +124,7 @@ class Credentials(unittest.TestCase):
 
 class Login(unittest.TestCase):
     def test_login_stores_tokens_only_never_the_password(self):
-        d = Path(tempfile.mkdtemp()) / "tokens"
+        d = Path(make_temp_dir()) / "tokens"
         auth = load_auth(d)
 
         class FakeInner:
@@ -141,7 +157,7 @@ class NotAuthenticatedMessages(unittest.TestCase):
              ("garmin_chart.py", ["sleep", "--output", "/dev/null"])]
 
     def test_scripts_point_to_the_login_command(self):
-        env = {**os.environ, "GARMIN_TOKEN_DIR": tempfile.mkdtemp()}
+        env = {**os.environ, "GARMIN_TOKEN_DIR": make_temp_dir()}
         for script, args in self.CASES:
             p = subprocess.run([sys.executable, str(SCRIPTS / script), *args], capture_output=True, text=True,
                                env=env, stdin=subprocess.DEVNULL, timeout=60)

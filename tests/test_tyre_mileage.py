@@ -9,6 +9,21 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+import atexit
+
+
+_TEMP_DIRS = []
+
+
+def make_temp_dir():
+    """A temp directory that is removed when the test run ends. (Tests used to leave about a hundred
+    folders behind in /tmp per run, and /tmp is held in RAM on some machines.)"""
+    path = tempfile.mkdtemp()
+    _TEMP_DIRS.append(path)
+    return path
+
+
+atexit.register(lambda: [shutil.rmtree(p, ignore_errors=True) for p in _TEMP_DIRS])
 
 REPO = Path(__file__).resolve().parent.parent
 SRC = REPO / "skills" / "gear-maintenance"
@@ -17,7 +32,7 @@ SRC = REPO / "skills" / "gear-maintenance"
 @unittest.skipUnless(shutil.which("bash"), "needs bash")
 class TyreLedgerLocation(unittest.TestCase):
     def setUp(self):
-        self.root = Path(tempfile.mkdtemp())
+        self.root = Path(make_temp_dir())
         shutil.copytree(SRC / "scripts", self.root / "skills" / "gear-maintenance" / "scripts")
         (self.root / "skills" / "gear-maintenance" / "data").mkdir(parents=True)
         self.script = self.root / "skills" / "gear-maintenance" / "scripts" / "tyre-mileage.sh"

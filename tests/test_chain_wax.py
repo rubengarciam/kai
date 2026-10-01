@@ -13,6 +13,22 @@ from argparse import Namespace
 from datetime import date
 from pathlib import Path
 from unittest import mock
+import atexit
+import shutil
+
+
+_TEMP_DIRS = []
+
+
+def make_temp_dir():
+    """A temp directory that is removed when the test run ends. (Tests used to leave about a hundred
+    folders behind in /tmp per run, and /tmp is held in RAM on some machines.)"""
+    path = tempfile.mkdtemp()
+    _TEMP_DIRS.append(path)
+    return path
+
+
+atexit.register(lambda: [shutil.rmtree(p, ignore_errors=True) for p in _TEMP_DIRS])
 
 SCRIPT = Path(__file__).resolve().parent.parent / "skills" / "gear-maintenance" / "scripts" / "chain-wax.py"
 spec = importlib.util.spec_from_file_location("chain_wax", SCRIPT)
@@ -45,7 +61,7 @@ def ns(**kw):
 
 class TempLedger(unittest.TestCase):
     def setUp(self):
-        self.dir = Path(tempfile.mkdtemp())
+        self.dir = Path(make_temp_dir())
         self.path = self.dir / "chain-wax.json"
 
     def write(self, data):
