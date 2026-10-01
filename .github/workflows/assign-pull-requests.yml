@@ -1,0 +1,18 @@
+# Every new pull request gets gertybot as assignee and rubengarciam as reviewer
+# (see .github/auto_assign.yml). The action never checks out or runs the PR's code,
+# which is what makes pull_request_target safe here and lets it work for pull requests from forks.
+name: Assign pull requests
+
+on:
+  pull_request_target:
+    types: [opened, ready_for_review]
+
+permissions: {}
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: kentaro-m/auto-assign-action@0a2c53d3721e4c5cfcce6afd4014aecc337979f6 # v2.0.2
