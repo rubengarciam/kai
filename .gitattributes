@@ -1,0 +1,2 @@
+# Vendored third-party code: keep out of GitHub's language statistics and diffs
+skills/garmin-health-analysis/assets/chart.umd.js linguist-vendored -diff

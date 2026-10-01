@@ -67,7 +67,7 @@ Overall: 5 x 6' at threshold, well executed; HR drifted 4 bpm across the set
 - **Fitness markers:** VO2 max, lactate threshold, endurance and hill scores, fitness age, race predictions (5K to marathon).
 - **Other:** body composition and weigh-ins, SpO2, steps, floors, intensity minutes, hydration, all-day and intraday heart rate and stress.
 - **Ask by time:** "what was my heart rate at 3pm yesterday?" is answered from the intraday data.
-- **Dashboards:** sleep, Body Battery, HRV and activity charts, or a combined dashboard, generated as a local HTML page.
+- **Dashboards:** sleep, Body Battery, HRV and activity charts, or a combined dashboard, generated as a local HTML page. Each page is one self-contained file (Chart.js is embedded), so it draws with no internet access and still works if you move or email it.
 - **Activity files:** GPX (and FIT) downloads with elevation, pace or heart rate looked up at any distance or time.
 
 This is what lets Kai answer "am I ready to add intensity?" or "why do I feel flat this week?" with data instead of guesses.

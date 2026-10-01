@@ -10,6 +10,7 @@ REPO = Path(__file__).resolve().parent.parent
 
 TRACKED = ["templates/USER.md", "templates/MEMORY.md", "README.md", "CONTRIBUTING.md", "CHANGELOG.md", "docs/installation.md", "docs/architecture.md", "docs/upgrading.md",
            ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.md",
+           "skills/garmin-health-analysis/assets/chart.umd.js", "skills/garmin-health-analysis/assets/LICENSE-chartjs.md",
            "skills/gear-maintenance/data/tyres.example.json",
            "skills/gear-maintenance/data/chain-wax.example.json", "skills/gear-maintenance/SKILL.md",
            ".claude/skills/gear-maintenance", ".agents/skills/gear-maintenance", "data/nutrition-log.example.csv", "requirements.txt"]

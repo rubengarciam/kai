@@ -123,7 +123,7 @@ Re-authenticate if tokens expire:
 .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_chart.py hrv --days 90 --output ~/hrv-trend.html
 ```
 
-Charts open in default browser. Built with Chart.js.
+Charts open in the default browser. Built with Chart.js, bundled and embedded in each page, so a dashboard is one self-contained file that works offline and can be moved or emailed.
 
 ---
 

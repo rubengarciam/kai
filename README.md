@@ -118,6 +118,6 @@ Bugs and plans are tracked in [the issues](https://github.com/rubengarciam/kai/i
 
 ## Credits and license
 
-The skills are also published individually, and the coaching skill is adapted from [endurance-coach](https://github.com/shiv19/endurance-coach-skill) by shiv19 (MIT). Garmin skill originally by EversonL. See each skill's README for details.
+The skills are also published individually, and the coaching skill is adapted from [endurance-coach](https://github.com/shiv19/endurance-coach-skill) by shiv19 (MIT). Garmin skill originally by EversonL. Garmin dashboards bundle [Chart.js](https://www.chartjs.org) and its `@kurkle/color` dependency (both MIT), with their licences in `skills/garmin-health-analysis/assets/`. See each skill's README for details.
 
 Licensed under GPL v3. See [LICENSE](LICENSE).
