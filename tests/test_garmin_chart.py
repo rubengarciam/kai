@@ -59,7 +59,8 @@ CHARTS = {"stats": {"Avg Sleep": "7.4h"},
 
 def script_tags(html):
     """(opening tags, closing tags) of <script> elements."""
-    return len(re.findall(r"<script[\s>]", html)), html.count("</script>")
+    return (len(re.findall(r"<script[\s>]", html, re.IGNORECASE)),
+            len(re.findall(r"</script\s*>", html, re.IGNORECASE)))
 
 
 class BundledAsset(unittest.TestCase):

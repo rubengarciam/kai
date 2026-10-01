@@ -469,11 +469,20 @@ def cmd_profile(args: argparse.Namespace) -> None:
     if athletes:
         a = athletes[0]
         print(f"  Weight:      {a.get('weight', '—')} kg")
-        print(f"  DOB:         {a.get('dateOfBirth', '—')}")
-        print(f"  Gender:      {a.get('sex', '—')}")
+        print(f"  Age:         {_age_years(a.get('dateOfBirth'))}")
         print(f"  Bike FTP:    {a.get('cyclingFtp', '—')} W")
         print(f"  Run FTP:     {a.get('runningFtp', '—')}")
         print(f"  Swim FTP:    {a.get('swimFtp', '—')}")
+
+
+def _age_years(date_of_birth, today=None) -> str:
+    """Whole years from an ISO date of birth, or an em dash. The date itself is never shown."""
+    try:
+        born = datetime.fromisoformat(str(date_of_birth)[:10]).date()
+    except ValueError:
+        return "—"
+    today = today or date.today()
+    return str(today.year - born.year - ((today.month, today.day) < (born.month, born.day)))
 
 
 def cmd_workouts(args: argparse.Namespace) -> None:
