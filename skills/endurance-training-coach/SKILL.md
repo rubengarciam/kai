@@ -18,17 +18,18 @@ Keep this skill lean. When you need specifics, read the single-source references
 Before gathering data, check which skills are available and configured. Each skill has its own SKILL.md — read it to understand what data it provides and how to query it. Use whichever skills are present; if the user suggests a preference, follow it.
 
 ### TrainingPeaks (PRIMARY)
-The primary source for training load and performance metrics:
+The primary source for training load and performance metrics, and for daily metrics (HRV, resting HR, sleep hours, via `tp.py metrics`):
 - Current fitness: CTL (fitness), ATL (fatigue), TSB (form)
 - Training load trends and weekly TSS
 - Planned vs completed workouts, TSS, Intensity Factor
 - Personal records by sport and duration
 
 ### Garmin (HEALTH & RECOVERY)
-The primary source for recovery and physiological readiness:
-- Resting HR, HRV, sleep scores, Body Battery
+The source for recovery that TrainingPeaks does not hold, and the failover for daily metrics:
+- Body Battery, sleep stages and score
 - Training readiness score
 - Stress levels and health trends
+- Resting HR, HRV and sleep hours when TrainingPeaks has no value for the day
 
 ### Strava (ACTIVITY DETAILS)
 Best for detailed activity analysis when TrainingPeaks doesn't have enough granularity:
@@ -67,7 +68,7 @@ Gather athlete data from the configured skills:
 Check which skills are available, read their SKILL.md files, and use them to gather:
 
 - **Training load** (CTL/ATL/TSB, recent workouts, personal records) — TrainingPeaks preferred
-- **Recovery state** (HRV, resting HR, sleep, Body Battery) — Garmin preferred
+- **Recovery state** — HRV, resting HR and sleep hours from TrainingPeaks first, Garmin as failover; Body Battery and readiness from Garmin. Always state the date of each value and flag any that is not from today as stale
 - **Activity detail** (laps, splits, intervals) — Strava or Garmin as available
 
 If a skill is not configured or not authenticated, fall back to manual data collection using the questions in @reference/assessment.md.
@@ -79,7 +80,7 @@ Read @reference/assessment.md and apply it to the gathered data:
 1. **Current Form** (last 8-12 weeks):
    - CTL/ATL/TSB from TrainingPeaks
    - Recent workout volume and consistency
-   - Current recovery state from Garmin
+   - Current recovery state (TrainingPeaks daily metrics first, Garmin as failover; note the age of each value)
 
 2. **Athletic Foundation** (lifetime/2+ years):
    - Personal records from TrainingPeaks
@@ -191,7 +192,7 @@ Read @reference/race-day.md for race execution:
 
 - **Never skip athlete validation** - Present your assessment and get confirmation before writing the plan
 - **Use TrainingPeaks as source of truth** for training metrics and load management
-- **Check Garmin for recovery** before prescribing high-intensity blocks
+- **Check recovery data** (TrainingPeaks daily metrics, Garmin as failover) before prescribing high-intensity blocks, and say how old it is
 - **Distinguish foundation from form** - Recent breaks matter more than historical races
 - **Zones + paces are required** for all prescribed workouts
 - **Be conservative with progression** - Better to undercook than overcook

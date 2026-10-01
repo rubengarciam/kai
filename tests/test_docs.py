@@ -67,6 +67,43 @@ class Docs(unittest.TestCase):
                          "vulnerability in this repo's code, not agent instructions); use CREDENTIALS.md")
 
 
+@unittest.skipUnless((REPO / ".git").exists(), "not a git checkout")
+class RecoveryFreshness(unittest.TestCase):
+    """The rule from #31: recovery figures carry their date, and TrainingPeaks is read before Garmin
+    for the daily metrics. It lives only in prose, so guard it against being edited out."""
+
+    def agents(self):
+        return (REPO / "AGENTS.md").read_text()
+
+    def section(self):
+        m = re.search(r"## Recovery data: source and freshness\n(.*?)\n## ", self.agents(), re.S)
+        self.assertIsNotNone(m, "AGENTS.md lost its 'Recovery data: source and freshness' section")
+        return m.group(1)
+
+    def test_section_reads_trainingpeaks_first_and_flags_stale_values(self):
+        s = self.section()
+        self.assertLess(s.index("TrainingPeaks"), s.index("Garmin"))
+        for needle in ("tp.py metrics", "Fall back to Garmin", "STALE", "Never present an older value"):
+            self.assertIn(needle, s)
+
+    def test_metrics_command_and_types_the_section_relies_on_exist(self):
+        tp = (REPO / "skills/trainingpeaks/scripts/tp.py").read_text()
+        self.assertIn('"metrics": cmd_metrics', tp)
+        for key in ("hrv", "pulse", "sleep"):
+            self.assertRegex(tp, r'"%s":\s*\{"type"' % key)
+
+    def test_workout_analysis_step_points_at_the_section(self):
+        step = re.search(r"1\. \*\*Fetch context, always both sides\.\*\*[^\n]*", self.agents())
+        self.assertIsNotNone(step)
+        self.assertIn("`metrics`", step.group(0))
+        self.assertIn("Recovery data: source and freshness", step.group(0))
+
+    def test_coach_skill_no_longer_calls_garmin_the_primary_recovery_source(self):
+        text = (REPO / "skills/endurance-training-coach/SKILL.md").read_text()
+        self.assertNotIn("The primary source for recovery", text)
+        self.assertNotIn("— Garmin preferred", text)
+
+
 def slugs(md_path):
     """GitHub-style heading anchors for a markdown file (ignores headings inside code fences)."""
     seen, out, in_code = {}, set(), False
