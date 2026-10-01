@@ -24,7 +24,7 @@ Overall: 5 x 6' at threshold, well executed; HR drifted 4 bpm across the set
 (Example numbers.) `—` marks a metric with no planned target, `✓` one that hit plan.
 
 **How it works.**
-1. Kai loads your load metrics and the workout from TrainingPeaks, the lap splits from Strava (TrainingPeaks has no lap data) and your recovery context from Garmin: sleep, HRV and resting heart rate for the last three days. A session can't be read without both sides.
+1. Kai loads your load metrics and the workout from TrainingPeaks, the lap splits from Strava (TrainingPeaks has no lap data) and your recovery context: sleep, HRV and resting heart rate for the last three days, from TrainingPeaks first with Garmin as failover. A session can't be read without both sides.
 2. It analyses the **raw data first**, on its own: splits, pace or power against the prescribed zone, heart rate, cadence.
 3. **Only then** does it read your comment or RPE, as a cross-check. If they disagree, it says so plainly instead of letting your framing explain away an anomaly. If you say the run felt easy and the heart rate says otherwise, you'll hear about it.
 
@@ -35,9 +35,9 @@ Overall: 5 x 6' at threshold, well executed; HR drifted 4 bpm across the set
 - The TrainingPeaks **"Feeling" scale** runs low = good, high = bad (like RPE); Kai confirms this with you the first time.
 - It uses TrainingPeaks' TSS, normalised power and IF, not Strava's, which are less accurate.
 
-**Needs.** TrainingPeaks (load and the workout), plus Strava for laps and Garmin for recovery context. With fewer sources Kai works with what it has and says what's missing.
+**Needs.** TrainingPeaks (load, the workout and daily recovery metrics), plus Strava for laps and Garmin for the recovery detail and failover. With fewer sources Kai works with what it has and says what's missing.
 
-**Good to know.** Garmin data lags by a day or two after a sync, so the newest day can be empty; Kai fetches a few days and uses the latest complete one. On chat surfaces that don't render tables (WhatsApp, some Discord setups) it uses bullet lists.
+**Good to know.** Recovery data can lag by a day or two after a sync, so the newest day can be empty; Kai fetches a few days and uses the latest complete one, and tells you how old it is (see [Recovery monitoring](#recovery-monitoring)). On chat surfaces that don't render tables (WhatsApp, some Discord setups) it uses bullet lists.
 
 **Skill docs.** [TrainingPeaks](../skills/trainingpeaks/README.md), [Strava](../skills/strava/README.md), [Garmin](../skills/garmin-health-analysis/README.md).
 
@@ -61,7 +61,7 @@ Overall: 5 x 6' at threshold, well executed; HR drifted 4 bpm across the set
 
 ## Recovery monitoring
 
-**What you get.** Load without recovery is half the picture, so Kai reads both. From Garmin Connect:
+**What you get.** Load without recovery is half the picture, so Kai reads both. Daily HRV, resting heart rate and sleep hours come from TrainingPeaks first, with Garmin as failover when TrainingPeaks has no value for the day. Everything else below comes from Garmin Connect:
 - **Sleep:** hours, light/deep/REM/awake stages, score, HRV, respiration.
 - **Recovery:** resting heart rate, HRV trend, Body Battery, stress, training readiness and training status.
 - **Fitness markers:** VO2 max, lactate threshold, endurance and hill scores, fitness age, race predictions (5K to marathon).
@@ -72,9 +72,11 @@ Overall: 5 x 6' at threshold, well executed; HR drifted 4 bpm across the set
 
 This is what lets Kai answer "am I ready to add intensity?" or "why do I feel flat this week?" with data instead of guesses.
 
+**How fresh it is.** Every recovery figure Kai quotes comes with its date. A value that isn't from today is flagged, for example "HRV 82 (STALE: measured 3 days ago)", and Kai says so before drawing conclusions from it, instead of presenting an old reading as this morning's. When the newest value is stale, it tells you what is missing and suggests checking your watch or app sync.
+
 **How it interprets it.** Before reading intensity or HRV at face value, Kai checks `USER.md` and its memory for illness or injury history: a low HRV after a bug means something different from a low HRV in a normal week.
 
-**Needs.** A Garmin Connect account, Python 3.12+ and the packages in `requirements.txt`, and a one-time login that **you run yourself in your own terminal**: the password is never stored and Kai never asks for it in chat. See [installation](installation.md#python-packages-garmin-only).
+**Needs.** TrainingPeaks covers the daily metrics. For Body Battery, readiness, stress, sleep stages and the failover you need a Garmin Connect account, Python 3.12+ and the packages in `requirements.txt`, and a one-time login that **you run yourself in your own terminal**: the password is never stored and Kai never asks for it in chat. See [installation](installation.md#python-packages-garmin-only).
 
 **Limits.** The Garmin connection uses a community library, not an official API, so it can break or be rate-limited. Some metrics need specific hardware (Body Battery needs an HRV-capable watch).
 

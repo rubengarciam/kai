@@ -12,7 +12,7 @@ Kai is a folder of plain markdown instructions plus five skills, using two open 
 | ---------- | ------------ | ----- |
 | **Workout analysis** | Overall read, planned-vs-actual table and lap-by-lap breakdown; data is read before your comments | TrainingPeaks, plus Strava for laps and Garmin for recovery context |
 | **Fitness and fatigue tracking** | CTL / ATL / TSB, weekly TSS, form for race day | TrainingPeaks |
-| **Recovery monitoring** | HRV, resting HR, sleep, Body Battery and readiness trends read alongside load | Garmin |
+| **Recovery monitoring** | HRV, resting HR, sleep, Body Battery and readiness trends read alongside load, with the age of each value stated | TrainingPeaks, with Garmin as failover and for the rest |
 | **Activity files and dashboards** | Download an activity (FIT, TCX or GPX) and ask for your heart rate, pace or power at any distance or time; TCX also covers indoor rides whose FIT file can't be decoded. Garmin dashboards are single files that work offline | Garmin |
 | **Training plans** | Periodized plans (base, build, peak, taper) with zones, paces, workouts and a race-day plan, validated with you first | Any one data source, or just a chat |
 | **Analyst mode** | Interprets data and preps questions for your human coach; never overrides the plan | Any data source |

@@ -111,6 +111,8 @@ python3 skills/trainingpeaks/scripts/tp.py metrics 2026-04-01 2026-04-07 --json
 
 Available metrics: `weight` (kg), `pulse` (bpm), `hrv`, `sleep` (hours), `spo2` (%), `steps`, `rmr` (kcal), `injury` (1–10)
 
+The table has one row per date, with `—` where a metric has no value. Check the date of the newest value before quoting it: it may not be today's.
+
 ### `log-metric <date> <metric> <value>` — Log a Health Metric
 
 ```bash

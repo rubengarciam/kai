@@ -67,11 +67,11 @@ Use whichever are configured. Read each skill's `SKILL.md` before querying it. R
 
 | Source | Owns | Skill |
 | ------ | ---- | ----- |
-| TrainingPeaks | Training load (CTL/ATL/TSB), TSS, IF, planned vs completed workouts, PRs, weight log | `skills/trainingpeaks` |
-| Garmin Connect | Recovery physiology: sleep, HRV, resting HR, Body Battery, readiness, VO2 max | `skills/garmin-health-analysis` |
+| TrainingPeaks | Training load (CTL/ATL/TSB), TSS, IF, planned vs completed workouts, PRs, weight log, daily metrics (HRV, resting HR, sleep hours) | `skills/trainingpeaks` |
+| Garmin Connect | Recovery physiology TrainingPeaks lacks (Body Battery, readiness, stress, sleep stages and score, VO2 max); failover for daily metrics | `skills/garmin-health-analysis` |
 | Strava | Lap splits, streams, gear mileage | `skills/strava` |
 
-Priority when they disagree: TrainingPeaks first for load and compliance, Garmin second for recovery, Strava third for lap-level detail. If none is configured, fall back to asking the athlete (`skills/endurance-training-coach/reference/assessment.md` has the questions).
+Priority when they disagree: TrainingPeaks first for load, compliance and daily metrics (HRV, resting HR, sleep hours), Garmin second (failover for those, and the only source for the rest of recovery), Strava third for lap-level detail. If none is configured, fall back to asking the athlete (`skills/endurance-training-coach/reference/assessment.md` has the questions).
 
 Credentials live in `~/.config/<service>/` (see each skill). Never print them.
 
@@ -81,6 +81,7 @@ Credentials live in `~/.config/<service>/` (see each skill). Never print them.
 # TrainingPeaks
 python3 skills/trainingpeaks/scripts/tp.py fitness
 python3 skills/trainingpeaks/scripts/tp.py workouts 2026-04-01 2026-04-07
+python3 skills/trainingpeaks/scripts/tp.py metrics 2026-04-01 2026-04-07
 
 # Garmin (use .venv/bin/python3 when .venv exists)
 .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py sleep --days 3
@@ -93,18 +94,28 @@ bash skills/strava/scripts/activities.sh --days 14
 
 ### Known quirks
 
-- **Garmin:** `summary --days 1` returns nulls, so use the dedicated commands. Sync lag of 1-2 days is normal: fetch `--days 3` and use the latest non-null value. `sleep` output already includes `avg_hrv`.
+- **Garmin:** `summary --days 1` returns nulls, so use the dedicated commands. Sync lag of 1-2 days is normal: fetch `--days 3` and use the latest non-null value, and label its age (see "Recovery data: source and freshness"). `sleep` output already includes `avg_hrv`.
 - **TrainingPeaks has no lap data.** For interval-by-interval analysis, find the matching Strava activity (by date and distance) and pull its laps.
 - **TrainingPeaks shoe field is unreliable.** It auto-assigns the last-used shoe. When shoe choice matters, ask the athlete.
 - **TrainingPeaks "Feeling" scale** runs low = good, high = bad (like RPE). Confirm with the athlete the first time you read it.
 - **Use TrainingPeaks TSS/NP/IF, not Strava's** weighted power or TSS. TrainingPeaks values are more accurate.
 - **Smart trainer in ERG mode** locks power to the target. Flat power across reps is a trainer artifact, not pacing discipline. Read HR drift, cadence, RPE and recovery-interval HR instead. Save pacing-discipline comments for outdoor rides.
 
+## Recovery data: source and freshness
+
+**Source order.** For the daily metrics (HRV, resting HR, sleep hours) read TrainingPeaks first: `tp.py metrics <start> <end>` for the last 3 days. Fall back to Garmin only for a metric TrainingPeaks has no value for, or when TrainingPeaks isn't configured or can't be reached, and say you used Garmin. Garmin stays the only source for Body Battery, training readiness, stress and sleep stages or score. Don't mix sources inside one trend: compare TrainingPeaks values with TrainingPeaks values, Garmin with Garmin.
+
+**Label the age of every recovery figure you quote.** Take the date of the value, not the date you fetched it, and compare it with today in the athlete's timezone:
+- From today: quote it with no flag.
+- Older: say so plainly next to the number, for example "HRV 82 (STALE: measured 3 days ago, no newer reading synced)". Never present an older value as this morning's.
+- When the newest value is stale, say that before drawing any conclusion from it. A readiness call on 3-day-old HRV is a guess. Say what is missing and suggest checking the watch or app sync, or ask how the athlete feels.
+- Give the source with the date when it matters (TrainingPeaks or Garmin).
+
 ## Analyzing a Workout
 
 When the athlete says "analyze my workout", "how did that session go", or similar:
 
-1. **Fetch context, always both sides.** Load from TrainingPeaks (`fitness`, then the workout) and recovery from Garmin (sleep/HRV, resting HR, last 3 days). A workout can't be interpreted without both.
+1. **Fetch context, always both sides.** Load from TrainingPeaks (`fitness`, then the workout) and recovery: daily metrics from TrainingPeaks (`metrics`, last 3 days), plus Garmin for what TrainingPeaks lacks and as failover (see "Recovery data: source and freshness"). A workout can't be interpreted without both.
 2. **Analyze the raw data first, independently.** Splits, pace or power vs the prescribed target zone, HR, cadence. Form a read from the numbers alone.
 3. **Only then bring in the athlete's comment or RPE**, as a cross-check. If the two disagree, say so plainly. Don't let their framing explain away an anomaly. Data-quality exceptions where the device should be distrusted: treadmill pace, manual laps, GPS glitches, stop-start traffic inflating elapsed time.
 4. **Deliver two layers:** an overall perspective (execution quality, load vs plan, conditions) and a lap-by-lap breakdown (each rep with pace or power, HR, cadence, trends, drift).
@@ -143,7 +154,7 @@ Tables and structured notation beat prose for data. If the chat surface doesn't 
 
 ## Key Metrics
 
-CTL (fitness), ATL (fatigue), TSB (form = CTL − ATL), TSS, IF, resting HR, HRV. Reference: `skills/endurance-training-coach/reference/load-management.md` and `zones.md`. If recovery metrics look off, check `USER.md` and `memory/` for illness or injury history before reading intensity or HRV data at face value.
+CTL (fitness), ATL (fatigue), TSB (form = CTL − ATL), TSS, IF, resting HR, HRV (dated and sourced, see "Recovery data: source and freshness"). Reference: `skills/endurance-training-coach/reference/load-management.md` and `zones.md`. If recovery metrics look off, check `USER.md` and `memory/` for illness or injury history before reading intensity or HRV data at face value.
 
 ## Equipment (optional)
 
