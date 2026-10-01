@@ -16,6 +16,21 @@ from argparse import Namespace
 from datetime import date
 from pathlib import Path
 from unittest import mock
+import atexit
+
+
+_TEMP_DIRS = []
+
+
+def make_temp_dir():
+    """A temp directory that is removed when the test run ends. (Tests used to leave about a hundred
+    folders behind in /tmp per run, and /tmp is held in RAM on some machines.)"""
+    path = tempfile.mkdtemp()
+    _TEMP_DIRS.append(path)
+    return path
+
+
+atexit.register(lambda: [shutil.rmtree(p, ignore_errors=True) for p in _TEMP_DIRS])
 
 SRC = Path(__file__).resolve().parent.parent / "skills" / "gear-maintenance"
 spec = importlib.util.spec_from_file_location("tyres", SRC / "scripts" / "tyres.py")
@@ -50,7 +65,7 @@ def ns(**kw):
 
 class TempLedger(unittest.TestCase):
     def setUp(self):
-        self.dir = Path(tempfile.mkdtemp())
+        self.dir = Path(make_temp_dir())
         self.path = self.dir / "tyres.json"
 
     def write(self, data):
@@ -228,7 +243,7 @@ class LedgerLocationAndReport(unittest.TestCase):
     """Runs the real scripts in a temp copy of the skill so the default ledger paths are exercised."""
 
     def setUp(self):
-        self.root = Path(tempfile.mkdtemp())
+        self.root = Path(make_temp_dir())
         self.skill = self.root / "skills" / "gear-maintenance"
         shutil.copytree(SRC / "scripts", self.skill / "scripts")
         (self.skill / "data").mkdir()

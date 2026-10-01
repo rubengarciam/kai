@@ -18,6 +18,8 @@ They are offline (no network, no accounts) and must pass before you open a PR:
 .venv/bin/python3 -m unittest discover -s tests -v
 ```
 
+A test that needs a temporary folder uses the `make_temp_dir()` helper defined at the top of the existing test files, which removes it when the run ends; calling `tempfile.mkdtemp()` directly fails a hygiene test.
+
 They cover the Garmin login, the chain wax and tyre helpers, the docs (every documented path and link exists) and repo hygiene (the right files are tracked, personal ones are ignored).
 
 ## Branches and pull requests

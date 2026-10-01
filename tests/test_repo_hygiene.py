@@ -41,6 +41,19 @@ class Hygiene(unittest.TestCase):
                      or "/__pycache__/" in f or ".egg-info/" in f]
         self.assertEqual(artifacts, [], "build or download artifacts must not be committed")
 
+    def test_tests_clean_up_their_temp_directories(self):
+        # Each test file defines make_temp_dir(), which removes its folders when the run ends. Calling
+        # tempfile.mkdtemp() anywhere else leaves a folder behind in /tmp on every run.
+        offenders = []
+        for f in sorted((REPO / "tests").glob("test_*.py")):
+            if f.name == Path(__file__).name:       # this file names the call in its own comments
+                continue
+            calls = f.read_text().count("tempfile.mkdtemp()")
+            allowed = 1 if "def make_temp_dir" in f.read_text() else 0
+            if calls > allowed:
+                offenders.append(f"{f.name}: {calls - allowed} direct call(s)")
+        self.assertEqual(offenders, [], "use make_temp_dir() instead of tempfile.mkdtemp() in tests")
+
     def test_build_artifacts_are_ignored(self):
         for f in ("x-1.0-py3-none-any.whl", "x-1.0.tar.gz", "pkg.egg-info/PKG-INFO", "dist/x.whl", "build/lib/x.py"):
             self.assertEqual(git("check-ignore", "-q", f).returncode, 0, f"{f} would not be ignored")

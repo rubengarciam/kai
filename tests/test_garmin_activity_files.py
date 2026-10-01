@@ -20,6 +20,22 @@ import zipfile
 from datetime import timezone
 from pathlib import Path
 from unittest import mock
+import atexit
+import shutil
+
+
+_TEMP_DIRS = []
+
+
+def make_temp_dir():
+    """A temp directory that is removed when the test run ends. (Tests used to leave about a hundred
+    folders behind in /tmp per run, and /tmp is held in RAM on some machines.)"""
+    path = tempfile.mkdtemp()
+    _TEMP_DIRS.append(path)
+    return path
+
+
+atexit.register(lambda: [shutil.rmtree(p, ignore_errors=True) for p in _TEMP_DIRS])
 
 REPO = Path(__file__).resolve().parent.parent
 SCRIPTS = REPO / "skills" / "garmin-health-analysis" / "scripts"
@@ -29,7 +45,7 @@ SCRIPT = SCRIPTS / "garmin_activity_files.py"
 def load_module():
     sys.path.insert(0, str(SCRIPTS))
     try:
-        with mock.patch.dict(os.environ, {"GARMIN_TOKEN_DIR": tempfile.mkdtemp()}):
+        with mock.patch.dict(os.environ, {"GARMIN_TOKEN_DIR": make_temp_dir()}):
             sys.modules.pop("garmin_activity_files", None)
             sys.modules.pop("garmin_auth", None)
             return importlib.import_module("garmin_activity_files")
@@ -151,7 +167,7 @@ class FitBytesFrom(unittest.TestCase):
 
 class DownloadActivityFile(unittest.TestCase):
     def setUp(self):
-        self.root = Path(tempfile.mkdtemp())
+        self.root = Path(make_temp_dir())
 
     def download(self, payload, fmt="fit", out=None, activity_id=123):
         client = FakeClient(payload)
@@ -229,7 +245,7 @@ class ParseAndAnalyze(unittest.TestCase):
     """The end-to-end symptom from the issue: a downloaded activity must actually parse."""
 
     def setUp(self):
-        self.root = Path(tempfile.mkdtemp())
+        self.root = Path(make_temp_dir())
 
     def analyze_cli(self, path):
         p = subprocess.run([sys.executable, str(SCRIPT), "analyze", "--file", str(path)],
@@ -343,7 +359,7 @@ LAP_XML = ("<TotalTimeSeconds>600.5</TotalTimeSeconds><DistanceMeters>5000.0</Di
 
 class ParseTcx(unittest.TestCase):
     def setUp(self):
-        self.root = Path(tempfile.mkdtemp())
+        self.root = Path(make_temp_dir())
 
     def parse(self, data, name="a.tcx"):
         path = self.root / name
@@ -407,7 +423,7 @@ class ParseTcx(unittest.TestCase):
 
 class TcxErrors(unittest.TestCase):
     def setUp(self):
-        self.root = Path(tempfile.mkdtemp())
+        self.root = Path(make_temp_dir())
 
     def parse(self, data):
         path = self.root / "a.tcx"
@@ -443,7 +459,7 @@ class TcxErrors(unittest.TestCase):
 
 class ParseActivityFile(unittest.TestCase):
     def test_dispatch_is_by_extension_in_any_case(self):
-        root = Path(tempfile.mkdtemp())
+        root = Path(make_temp_dir())
         for name in ("a.tcx", "A.TCX", "a.Tcx"):
             (root / name).write_bytes(build_tcx([("", [FULL_POINT])]))
             self.assertEqual(gaf.parse_activity_file(str(root / name))["total_records"], 1, name)
@@ -456,7 +472,7 @@ class ParseActivityFile(unittest.TestCase):
 @unittest.skipUnless(gaf.HAS_FITPARSE, "needs fitparse (pip install -r requirements.txt)")
 class TcxEndToEnd(unittest.TestCase):
     def setUp(self):
-        self.root = Path(tempfile.mkdtemp())
+        self.root = Path(make_temp_dir())
 
     def run_cli(self, *args):
         return subprocess.run([sys.executable, str(SCRIPT), *args], capture_output=True, text=True, timeout=60)

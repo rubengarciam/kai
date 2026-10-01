@@ -17,6 +17,22 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
+import atexit
+import shutil
+
+
+_TEMP_DIRS = []
+
+
+def make_temp_dir():
+    """A temp directory that is removed when the test run ends. (Tests used to leave about a hundred
+    folders behind in /tmp per run, and /tmp is held in RAM on some machines.)"""
+    path = tempfile.mkdtemp()
+    _TEMP_DIRS.append(path)
+    return path
+
+
+atexit.register(lambda: [shutil.rmtree(p, ignore_errors=True) for p in _TEMP_DIRS])
 
 REPO = Path(__file__).resolve().parent.parent
 SKILL = REPO / "skills" / "garmin-health-analysis"
@@ -27,7 +43,7 @@ ASSETS = SKILL / "assets"
 def load_module():
     sys.path.insert(0, str(SCRIPTS))
     try:
-        with mock.patch.dict(os.environ, {"GARMIN_TOKEN_DIR": tempfile.mkdtemp()}):
+        with mock.patch.dict(os.environ, {"GARMIN_TOKEN_DIR": make_temp_dir()}):
             for name in ("garmin_chart", "garmin_auth", "garmin_data"):
                 sys.modules.pop(name, None)
             return importlib.import_module("garmin_chart")
@@ -100,7 +116,7 @@ class GeneratedDashboard(unittest.TestCase):
 
 class MissingAsset(unittest.TestCase):
     def test_a_missing_bundle_falls_back_to_the_cdn_with_a_warning(self):
-        with mock.patch.object(gc, "CHART_JS_ASSET", Path(tempfile.mkdtemp()) / "nope.js"), \
+        with mock.patch.object(gc, "CHART_JS_ASSET", Path(make_temp_dir()) / "nope.js"), \
              mock.patch("sys.stderr") as err:
             html = gc.generate_html(CHARTS, "Test")
         self.assertIn(f'<script src="{gc.CHART_JS_CDN}"></script>', html)
