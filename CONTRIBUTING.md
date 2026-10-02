@@ -40,6 +40,7 @@ Name a branch `type/short-description`, in lowercase with hyphens:
 - Put the skill or area in the description (`garmin`, `strava`, `trainingpeaks`, `gear-maintenance`, `coach`), and use the matching **label** on the issue and PR to filter by skill. An issue number is welcome too: `feat/10-chain-wax-log`.
 - Use the same type in the PR title, optionally with the area: `feat(garmin): support garminconnect 0.3.x`.
 - A commit that changes behaviour comes with a test. Keep a change and its docs in the same PR.
+- CI (`.github/workflows/ci.yml`) runs on every push to main and every pull request: syntax and `shellcheck` for the scripts, then the unit tests on Python 3.12 and 3.13, which also checks that every Python script prints its usage on `--help`. Run the same locally with `.venv/bin/python3 -m unittest discover -s tests`. A weekly run on main catches upstream dependency changes.
 
 ## Who an issue is assigned to
 

@@ -9,7 +9,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 
 TRACKED = ["templates/USER.md", "templates/MEMORY.md", "README.md", "CONTRIBUTING.md", "CHANGELOG.md", "docs/installation.md", "docs/architecture.md", "docs/upgrading.md",
-           ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.md",
+           ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.md", ".github/workflows/ci.yml",
            "skills/garmin-health-analysis/assets/chart.umd.js", "skills/garmin-health-analysis/assets/LICENSE-chartjs.md",
            "skills/gear-maintenance/data/tyres.example.json",
            "skills/gear-maintenance/data/chain-wax.example.json", "skills/gear-maintenance/SKILL.md",
@@ -33,6 +33,14 @@ class Hygiene(unittest.TestCase):
     def test_personal_files_are_ignored(self):
         for f in IGNORED:
             self.assertEqual(git("check-ignore", "-q", f).returncode, 0, f"{f} would not be ignored")
+
+    def test_tracked_symlinks_resolve(self):
+        broken = []
+        for line in git("ls-files", "-s").stdout.splitlines():
+            mode, _sha, _stage, path = line.split(None, 3)
+            if mode == "120000" and not (REPO / path).exists():
+                broken.append(path)
+        self.assertEqual(broken, [], "tracked symlinks must point at something that exists")
 
     def test_no_build_artifacts_are_tracked(self):
         # A stray `pip download` once left a .whl in the repo folder and a blanket `git add -A` committed it
