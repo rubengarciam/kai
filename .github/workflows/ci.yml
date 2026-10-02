@@ -1,0 +1,57 @@
+# Runs the same checks as the PR checklist: syntax and lint for the scripts, then the unit tests on the supported
+# Python versions (requirements.txt needs 3.12+). No secrets, read-only token, nothing here touches a real account.
+# The weekly run on main catches upstream dependency changes (the ranges in requirements.txt are not locked), so a
+# red pull request is more likely to be the PR's own fault.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - name: Python syntax
+        run: git ls-files -z '*.py' | xargs -0 python -m py_compile
+      - name: Shell syntax
+        run: git ls-files -z '*.sh' | xargs -0 -n1 bash -n
+      - name: Shellcheck
+        run: git ls-files -z '*.sh' | xargs -0 shellcheck
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install requirements
+        run: python -m pip install -r requirements.txt
+      - name: Unit tests (includes repo hygiene and the --help smoke test of every Python script)
+        run: python -m unittest discover -s tests
