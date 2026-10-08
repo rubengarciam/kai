@@ -9,6 +9,15 @@ metadata: {"clawdbot":{"emoji":"🏃","requires":{"bins":["curl"],"env":["STRAVA
 
 Interact with Strava to load activities, analyze workouts, and track fitness data.
 
+## First-time setup
+
+Run once, after creating the Strava API app and setting its Authorization Callback Domain to `localhost`:
+```bash
+python3 skills/strava/scripts/authorize.py            # prints a URL, then you paste the browser's address back
+python3 skills/strava/scripts/authorize.py --listen   # same, but a one-shot localhost listener catches the redirect
+```
+It writes `~/.config/strava/credentials.json` (mode `600`) and refuses to replace existing tokens without `--force`. It needs the user's browser click, so ask the user to run it; never put the client secret on a command line.
+
 ## Credentials
 
 Two options (in priority order):
