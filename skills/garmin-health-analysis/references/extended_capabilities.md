@@ -126,11 +126,13 @@ Files are saved as `activity_<id>.<format>`, readable only by you (`600`; a fold
 # Parse TCX file (per-second heart rate, distance, power, cadence, speed, altitude)
 .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py parse --file /tmp/activity_12345678.tcx
 
-# Parse GPX file (GPS track)
+# Parse GPX file (time, position, elevation, heart rate, cadence; no distance, power or speed)
 .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_activity_files.py parse --file /tmp/activity_12345678.gpx
 ```
 
-**Which format to download.** FIT is the richest for activities recorded on a Garmin device. **TCX is the one to use when a FIT file can't be decoded**, which happens with some indoor rides uploaded by third-party apps (the error says `Could not read this FIT file`): download the same activity with `--format tcx` and `parse`, `query` and `analyze` work on it exactly as they do on FIT. `analyze` gives the same statistics from a TCX as from the FIT of the same activity. GPX parsing currently fails on files that carry heart rate ([#42](https://github.com/rubengarciam/kai/issues/42)), so prefer TCX over GPX for analysis.
+**Which format to download.** FIT is the richest for activities recorded on a Garmin device. **TCX is the one to use when a FIT file can't be decoded**, which happens with some indoor rides uploaded by third-party apps (the error says `Could not read this FIT file`): download the same activity with `--format tcx` and `parse`, `query` and `analyze` work on it exactly as they do on FIT. `analyze` gives the same statistics from a TCX as from the FIT of the same activity. GPX files work too, with fewer fields (see below); prefer TCX when you need distance, power or speed.
+
+**GPX files contain**, when the activity has them: timestamp (UTC), position, elevation, and heart rate and cadence from Garmin's track-point extension. Garmin only puts points that have a GPS position in a GPX, so a treadmill run or pool swim exports an **empty** GPX (`parse` and `analyze` say so; download the TCX for those). There is no distance, power or speed either, so `query --distance` answers that the file has no distance (use `--time`, or the TCX), and `analyze` leaves `distance_meters` empty. `parse` returns `records` with the same field names as FIT and TCX, so `analyze` and `query` work on GPX the same way.
 
 **TCX files contain**, when the activity has them: timestamp (UTC), heart rate, distance, altitude, speed, power, cadence (bike and run) and position, plus a summary per lap. A pool swim has little more than time and heart rate. Fields a trackpoint lacks are simply left out, as with FIT.
 
@@ -206,8 +208,7 @@ pip install -r requirements.txt   # from the Kai repo root (Python 3.12+)
 
 - **garminconnect**: Garmin Connect API wrapper
 - **fitparse**: Parse FIT files (Garmin's binary format)
-- **gpxpy**: Parse GPX files (GPS track format)
-- TCX needs nothing extra: it is read with Python's standard library
+- TCX and GPX need nothing extra: they are read with Python's standard library
 
 ## 🛠️ Advanced Tips
 

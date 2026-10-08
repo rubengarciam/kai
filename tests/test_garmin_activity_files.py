@@ -522,3 +522,220 @@ class TcxEndToEnd(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --- GPX (#42) ----------------------------------------------------------------------------------
+# GPX 1.1 with Garmin's TrackPointExtension, the shape a real activity export has. Positions are made up.
+
+GPX_V11 = "http://www.topografix.com/GPX/1/1"
+GPX_V10 = "http://www.topografix.com/GPX/1/0"
+GPX_TPX_V1 = "http://www.garmin.com/xmlschemas/TrackPointExtension/v1"
+GPX_TPX_V2 = "http://www.garmin.com/xmlschemas/TrackPointExtension/v2"
+
+
+def gpx_point(seconds, hr=None, cad=None, ele=None, pos=("-33.5", "151.2"), tpx=GPX_TPX_V1, prefix="gpxtpx"):
+    inner = ""
+    if hr is not None:
+        inner += f"<{prefix}:hr>{hr}</{prefix}:hr>"
+    if cad is not None:
+        inner += f"<{prefix}:cad>{cad}</{prefix}:cad>"
+    attrs = f' lat="{pos[0]}" lon="{pos[1]}"' if pos else ""
+    body = f"<ele>{ele}</ele>" if ele is not None else ""
+    body += f"<time>2026-01-01T09:00:{seconds:02d}Z</time>"
+    if inner:
+        body += f'<extensions><{prefix}:TrackPointExtension xmlns:{prefix}="{tpx}">{inner}</{prefix}:TrackPointExtension></extensions>'
+    return f"<trkpt{attrs}>{body}</trkpt>"
+
+
+def build_gpx(points, ns=GPX_V11, segments=1):
+    body = "".join(f"<trkseg>{''.join(points)}</trkseg>" for _ in range(segments))
+    return (f'<?xml version="1.0" encoding="UTF-8"?><gpx xmlns="{ns}" version="1.1" creator="test">'
+            f"<trk><name>x</name>{body}</trk></gpx>").encode()
+
+
+GPX_SAMPLES = [gpx_point(sec, hr=hr, cad=80 + sec, ele=10.5 + sec) for sec, hr, _ in SAMPLES]
+
+
+class ParseGpx(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(make_temp_dir())
+
+    def parse(self, data, name="a.gpx"):
+        path = self.root / name
+        path.write_bytes(data if isinstance(data, bytes) else data.encode())
+        return gaf.parse_gpx_file(str(path))
+
+    def test_heart_rate_and_cadence_extensions_become_fit_style_records(self):
+        result = self.parse(build_gpx(GPX_SAMPLES))
+        self.assertNotIn("error", result)
+        self.assertEqual(result["total_records"], 5)
+        self.assertEqual(result["records"][1], {
+            "timestamp": gaf.datetime(2026, 1, 1, 9, 0, 1, tzinfo=timezone.utc),
+            "latitude": -33.5, "longitude": 151.2, "altitude": 11.5, "heart_rate": 110, "cadence": 81})
+        self.assertIsInstance(result["records"][1]["heart_rate"], int)
+        self.assertEqual((result["laps"], result["sessions"]), ([], []))
+        self.assertNotIn("points", result)
+        self.assertNotIn("bounds", result)
+
+    def test_the_v2_extension_namespace_and_any_prefix_parse_the_same(self):
+        v2 = self.parse(build_gpx([gpx_point(1, hr=120, cad=85, tpx=GPX_TPX_V2, prefix="ns3")]))
+        v1 = self.parse(build_gpx([gpx_point(1, hr=120, cad=85)]))
+        self.assertEqual(v2["records"], v1["records"])
+        self.assertEqual(v2["records"][0]["heart_rate"], 120)
+
+    def test_gpx_1_0_and_a_file_without_a_namespace_parse(self):
+        for ns in (GPX_V10, ""):
+            data = build_gpx([gpx_point(1, hr=120)], ns=ns)
+            if not ns:
+                data = data.replace(b' xmlns=""', b"")
+            self.assertEqual(self.parse(data)["records"][0]["heart_rate"], 120, ns)
+
+    def test_fields_a_point_lacks_are_left_out(self):
+        pool = gpx_point(1, hr=120, pos=None)             # a pool swim: no position, no elevation
+        no_ext = gpx_point(2)                             # position and time only
+        bare = '<trkpt lat="-33.5" lon="151.2"></trkpt>'  # nothing but a position
+        records = self.parse(build_gpx([pool, no_ext, bare]))["records"]
+        self.assertEqual(sorted(records[0]), ["heart_rate", "timestamp"])
+        self.assertEqual(sorted(records[1]), ["latitude", "longitude", "timestamp"])
+        self.assertEqual(sorted(records[2]), ["latitude", "longitude"])
+
+    def test_unreadable_values_are_dropped_not_fatal(self):
+        bad = ('<trkpt lat="x" lon="151.2"><ele>high</ele><time>yesterday</time><extensions>'
+               f'<g:TrackPointExtension xmlns:g="{GPX_TPX_V1}"><g:hr>abc</g:hr><g:cad>85</g:cad></g:TrackPointExtension>'
+               "</extensions></trkpt>")
+        self.assertEqual(self.parse(build_gpx([bad]))["records"], [{"cadence": 85}])
+
+    def test_points_keep_file_order_across_segments_and_tracks(self):
+        data = build_gpx([gpx_point(1, hr=101), gpx_point(2, hr=102)], segments=2)
+        data = data.replace(b"</gpx>", b"<trk><trkseg>" + gpx_point(3, hr=103).encode() + b"</trkseg></trk></gpx>")
+        self.assertEqual([r["heart_rate"] for r in self.parse(data)["records"]], [101, 102, 101, 102, 103])
+
+    def test_waypoints_and_routes_are_not_activity_points(self):
+        data = build_gpx([gpx_point(1, hr=101)]).replace(
+            b"<trk>", b'<wpt lat="1" lon="2"><time>2026-01-01T09:00:00Z</time></wpt><rte><rtept lat="1" lon="2"/></rte><trk>')
+        self.assertEqual(self.parse(data)["total_records"], 1)
+
+    def test_a_gpx_with_no_track_points_parses_to_nothing(self):
+        result = self.parse(f'<gpx xmlns="{GPX_V11}" version="1.1"><trk><trkseg/></trk></gpx>')
+        self.assertEqual((result["records"], result["total_records"]), ([], 0))
+        self.assertIn("error", gaf.analyze_activity(result))     # "No data records to analyze", not a crash
+
+    def test_an_empty_gpx_says_why_and_points_at_the_tcx(self):
+        # Garmin's GPX export leaves out points without a GPS position, so a treadmill run or pool swim is empty
+        result = self.parse(f'<gpx xmlns="{GPX_V11}" version="1.1"><trk><name>x</name><trkseg/></trk></gpx>')
+        self.assertIn("download the TCX", result["note"])
+        self.assertIn("download the TCX", gaf.analyze_activity(result)["error"])
+        self.assertNotIn("note", self.parse(build_gpx(GPX_SAMPLES)))      # only when it is empty
+
+    def test_analyze_gets_the_heart_rate_statistics(self):
+        stats = gaf.analyze_activity(self.parse(build_gpx(GPX_SAMPLES)))
+        self.assertEqual(stats["heart_rate"], {"avg": 120.0, "max": 140, "min": 100})
+        self.assertEqual((stats["total_points"], stats["duration_seconds"]), (5, 4.0))
+        self.assertEqual(stats["cadence"]["avg"], 82.0)
+        self.assertEqual((stats["elevation"]["min"], stats["elevation"]["max"]), (10.5, 14.5))
+        self.assertIsNone(stats["distance_meters"])               # GPX carries no distance, and none is invented
+
+
+class GpxErrors(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(make_temp_dir())
+
+    def parse(self, data):
+        path = self.root / "a.gpx"
+        path.write_bytes(data)
+        return gaf.parse_gpx_file(str(path))
+
+    def test_not_xml(self):
+        for junk in (b"", b"this is not xml", b"<gpx><trk>"):
+            self.assertIn("Could not read this GPX file", self.parse(junk)["error"], junk)
+
+    def test_a_tcx_or_other_xml_handed_over_as_gpx_gets_a_readable_error(self):
+        tcx = build_tcx([("", [FULL_POINT])])
+        self.assertIn("Not a GPX file (its root element is <TrainingCenterDatabase>)", self.parse(tcx)["error"])
+        self.assertIn("Not a GPX file (its root element is <kml>)", self.parse(b"<kml/>")["error"])
+
+    def test_a_fit_file_handed_over_as_gpx_gets_a_readable_error(self):
+        self.assertIn("Could not read this GPX file", self.parse(FIT)["error"])
+
+    def test_a_dtd_or_entity_declaration_is_refused(self):
+        bomb = (b'<?xml version="1.0"?><!DOCTYPE lolz [<!ENTITY lol "lol"><!ENTITY lol2 "&lol;&lol;&lol;&lol;&lol;">]>'
+                b'<gpx xmlns="' + GPX_V11.encode() + b'"><metadata>&lol2;</metadata></gpx>')
+        for doc in (bomb, b"<!doctype x><gpx/>", b"<!ENTITY a 'b'><gpx/>"):
+            self.assertIn("DTD or XML entities", self.parse(doc)["error"])
+
+    def test_a_missing_file_is_an_error_dict(self):
+        self.assertIn("error", gaf.parse_gpx_file(str(self.root / "nope.gpx")))
+
+    def test_an_oversized_file_is_refused_before_it_is_read(self):
+        with mock.patch.object(gaf, "MAX_GPX_BYTES", 10):
+            self.assertIn("larger than", self.parse(build_gpx(GPX_SAMPLES))["error"])
+
+
+class GpxEndToEnd(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(make_temp_dir())
+        self.path = self.root / "activity.gpx"
+        self.path.write_bytes(build_gpx(GPX_SAMPLES))
+
+    def run_cli(self, *args):
+        return subprocess.run([sys.executable, str(SCRIPT), *args], capture_output=True, text=True, timeout=60)
+
+    def test_parse_and_analyze_work_in_any_case(self):
+        for name in ("activity.gpx", "ACTIVITY.GPX"):
+            path = self.root / name
+            path.write_bytes(build_gpx(GPX_SAMPLES))
+            parsed = json.loads(self.run_cli("parse", "--file", str(path)).stdout)
+            self.assertEqual(parsed["total_records"], 5, name)
+            analyzed = json.loads(self.run_cli("analyze", "--file", str(path)).stdout)
+            self.assertEqual(analyzed["heart_rate"]["max"], 140, name)
+
+    def test_query_by_time_works(self):
+        out = json.loads(self.run_cli("query", "--file", str(self.path), "--time", "2026-01-01T09:00:03Z").stdout)
+        self.assertEqual((out["heart_rate"], out["cadence"]), (130, 83))
+
+    def test_query_by_distance_says_there_is_no_distance_instead_of_answering_null(self):
+        out = json.loads(self.run_cli("query", "--file", str(self.path), "--distance", "20").stdout)
+        self.assertIsNotNone(out)
+        self.assertIn("no distance", out["error"])
+        self.assertIn("--time", out["error"])
+
+    def test_query_by_distance_still_finds_the_closest_point_when_there_is_distance(self):
+        points = [tcx_point(sec, hr=hr, dist=dist_cm / 100) for sec, hr, dist_cm in SAMPLES]
+        path = self.root / "ride.tcx"
+        path.write_bytes(build_tcx([("", points)]))
+        out = json.loads(self.run_cli("query", "--file", str(path), "--distance", "20").stdout)
+        self.assertEqual(out["heart_rate"], 120)
+
+    def test_the_error_for_a_bad_file_is_reported_and_exits_non_zero(self):
+        bad = self.root / "bad.gpx"
+        bad.write_bytes(b"not xml")
+        p = self.run_cli("query", "--file", str(bad), "--time", "2026-01-01T09:00:03Z")
+        self.assertEqual(p.returncode, 1)
+        self.assertIn("Could not read this GPX file", p.stdout)
+
+    def test_a_downloaded_gpx_is_saved_as_is_and_then_parses(self):
+        payload = build_gpx(GPX_SAMPLES)
+        result = gaf.download_activity_file(FakeClient(payload), 9, "gpx", str(self.root))
+        self.assertEqual(Path(result["file"]).read_bytes(), payload)
+        self.assertEqual(gaf.parse_activity_file(result["file"])["total_records"], 5)
+
+
+class GpxpyIsGone(unittest.TestCase):
+    """The GPX parser uses the standard library, like the TCX one, so nothing should ask for gpxpy."""
+
+    def test_nothing_in_the_repo_still_installs_or_imports_gpxpy(self):
+        if not (REPO / ".git").exists():
+            self.skipTest("not a git checkout")
+        files = subprocess.run(["git", "ls-files"], cwd=REPO, capture_output=True, text=True).stdout.split()
+        mentions = []
+        for f in files:
+            # changelogs record history, this file names the library to check for it
+            if f.endswith(("CHANGELOG.md", "test_garmin_activity_files.py")) or not (REPO / f).is_file():
+                continue
+            try:
+                if "gpxpy" in (REPO / f).read_text(errors="ignore").lower():
+                    mentions.append(f)
+            except OSError:
+                pass
+        self.assertEqual(mentions, [])
+        self.assertFalse(hasattr(gaf, "HAS_GPXPY"))

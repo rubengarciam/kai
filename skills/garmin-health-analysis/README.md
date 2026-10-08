@@ -19,7 +19,7 @@ Query health and training metrics from Garmin Connect. Works with any AI assista
 ## Requirements
 
 - Python 3.12+
-- The Python packages in the Kai repo's `requirements.txt` (`garminconnect` 0.3.x, `fitparse`, `gpxpy`)
+- The Python packages in the Kai repo's `requirements.txt` (`garminconnect` 0.3.x, `fitparse`)
 - A Garmin Connect account
 
 ## Setup
