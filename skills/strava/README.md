@@ -11,7 +11,7 @@ Load and analyze your Strava activities, gear mileage, and training stats using 
 - Gear mileage: lifetime distance for all bikes and shoes
 - Athlete profile and all-time / YTD cumulative stats
 - HR and power training zones
-- Auto token refresh (tokens expire every 6 hours)
+- One-command first-time setup (`authorize.py`) and auto token refresh (tokens expire every 6 hours)
 - No dependencies beyond `curl` and `python3` (stdlib only)
 
 ## Requirements
@@ -28,11 +28,24 @@ Visit https://www.strava.com/settings/api and create an app. Note your **Client 
 
 ### 2. Authorize and get tokens
 
-Authorize with `activity:read_all` scope and exchange the code for tokens via OAuth. Save the result to `~/.config/strava/credentials.json`:
+In your app's settings on the same page, set **Authorization Callback Domain** to `localhost`. This is the one step Strava makes you do by hand; if it is wrong, Strava shows a "redirect_uri invalid" page later.
+
+Then run the helper once:
 
 ```bash
-mkdir -p ~/.config/strava
+python3 skills/strava/scripts/authorize.py
 ```
+
+It asks for your Client ID and Client Secret (the secret is typed hidden and is never a command-line argument; you can also set `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET`), prints an address to open, and then:
+
+1. Open the address in a browser and click **Authorize**. Leave the box for viewing your private activities ticked.
+2. Strava sends the browser to a `localhost` page that fails to load. That is expected. Copy the full address from the address bar and paste it into the terminal (the bare `code` value works too).
+
+This default works over SSH and on machines without a display. If the browser is on the same machine you can add `--listen` and the script catches the redirect itself (a one-shot listener on `127.0.0.1` only, 3-minute limit; `--port` changes the port, default 8721).
+
+The script exchanges the code for tokens and writes `~/.config/strava/credentials.json` with mode `600` (folder `700`). It never prints a code or token. If the file already holds tokens it stops instead of replacing them: use `refresh_token.sh` to renew, or `--force` to authorize again from scratch (for example after a wrong scope).
+
+To do it by hand instead, save this to `~/.config/strava/credentials.json` (mode `600`):
 
 ```json
 {
@@ -44,6 +57,8 @@ mkdir -p ~/.config/strava
 ```
 
 All scripts load credentials from this file automatically. Alternatively, set `STRAVA_ACCESS_TOKEN` as an environment variable — no file needed for read-only use.
+
+A new Strava app starts with a single-athlete limit and the rate limits below, which is plenty for one person and Kai.
 
 ### 3. Refresh tokens when needed
 
@@ -144,7 +159,7 @@ zones = strava("/athlete/zones")
 | `GET /activities/{id}/laps` | Lap splits |
 | `GET /activities/{id}/streams` | Time-series data (HR, pace, power, cadence, altitude) |
 | `GET /athlete/zones` | HR and power training zones |
-| `POST /oauth/token` | Token refresh |
+| `GET /oauth/authorize`, `POST /oauth/token` | First-time authorization, token refresh |
 
 ## Activity data fields
 
