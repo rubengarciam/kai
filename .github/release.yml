@@ -1,0 +1,33 @@
+# Groups the notes GitHub generates for a release ("Generate release notes")
+# by pull request label. A PR appears under the first category it matches.
+changelog:
+  exclude:
+    labels:
+      - duplicate
+      - invalid
+      - wontfix
+  categories:
+    - title: Breaking changes
+      labels:
+        - breaking-change
+    - title: Security
+      labels:
+        - security
+    - title: New features
+      labels:
+        - enhancement
+    - title: New data sources
+      labels:
+        - data-source
+    - title: Bug fixes
+      labels:
+        - bug
+    - title: Documentation
+      labels:
+        - documentation
+    - title: Tests and CI
+      labels:
+        - testing
+    - title: Other changes
+      labels:
+        - "*"

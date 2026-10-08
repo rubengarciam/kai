@@ -70,3 +70,5 @@ Each command lives in exactly one place, the skill's README; other pages link to
 ## Releases
 
 Releases are tags on `main` named `vMAJOR.MINOR.PATCH`, published on GitHub with notes. A change that breaks documented commands, paths or Python requirements bumps the major version, and the notes say how to upgrade. Add a line to [CHANGELOG.md](CHANGELOG.md) in the PR that changes behaviour.
+
+The published notes are written by hand from the changelog. GitHub's "Generate release notes" button can draft the list of merged PRs for them, grouped by PR label as set in `.github/release.yml` (`breaking-change`, `security`, `enhancement`, `data-source`, `bug`, `documentation`, `testing`), so label PRs the same way as their issues.
