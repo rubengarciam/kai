@@ -122,6 +122,49 @@ def slugs(md_path):
     return out
 
 
+class TrainingPeaksCookieSetup(unittest.TestCase):
+    """The cookie setup from #9 lives in prose (README, SKILL.md, AGENTS.md); guard it against being edited out."""
+
+    def readme(self):
+        return (REPO / "skills/trainingpeaks/README.md").read_text()
+
+    def test_readme_has_steps_for_each_browser_and_the_renewal_story(self):
+        text = self.readme()
+        for heading in ("#### Chrome, Edge", "#### Firefox", "#### Safari", "### Troubleshooting",
+                        "### Why a cookie, and what the alternative is", "### 1. Get your auth cookie"):
+            self.assertIn(heading, text)
+        for needle in ("Treat it like a password", "auth-status --check", "Partner API", "--stdin"):
+            self.assertIn(needle, text)
+
+    def test_every_image_the_docs_reference_exists(self):
+        missing = []
+        for f in tracked_docs():
+            if f.suffix != ".md" or "templates" in f.relative_to(REPO).parts:
+                continue
+            for target in re.findall(r"!\[[^\]]*\]\(([^)\s]+)\)", f.read_text(errors="ignore")):
+                if not re.match(r"^https?:", target) and not (f.parent / target.split("#")[0]).exists():
+                    missing.append(f"{f.relative_to(REPO)}: {target}")
+        self.assertEqual(missing, [])
+
+    def test_the_readme_has_a_screenshot_slot_per_browser(self):
+        text = self.readme()
+        for name in ("chrome-cookie", "firefox-cookie", "safari-cookie", "terminal-auth"):
+            self.assertRegex(text, r"!\[[^\]]*\]\(images/%s\.[a-z]+\)" % name)
+
+    def test_agents_md_tells_kai_to_stop_and_not_handle_the_cookie(self):
+        text = (REPO / "AGENTS.md").read_text()
+        m = re.search(r"\*\*TrainingPeaks login is the athlete's job too\.\*\*[^\n]*", text)
+        self.assertIsNotNone(m, "AGENTS.md lost its TrainingPeaks re-authentication rule")
+        rule = m.group(0)
+        for needle in ("stop", "don't retry", "Never ask for the cookie in chat", "don't run `auth` yourself",
+                       "Strava and Garmin", "skills/trainingpeaks/README.md"):
+            self.assertIn(needle, rule)
+
+    def test_skill_md_forbids_agents_running_auth(self):
+        text = (REPO / "skills/trainingpeaks/SKILL.md").read_text()
+        self.assertIn("An agent must not run `auth`", text)
+
+
 LINK_RE = re.compile(r"(?<!\!)\[[^\]]*\]\(([^)\s]+)\)")
 
 

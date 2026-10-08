@@ -14,20 +14,21 @@ Stored at `~/.config/trainingpeaks/`:
 - `token.json` — cached Bearer token (auto-refreshes)
 - `config.json` — cached athlete ID and account info
 
-`TP_AUTH_COOKIE` env var overrides the stored cookie. Tokens auto-refresh from the stored cookie. Cookie lasts weeks — if expired, re-authenticate.
+`TP_AUTH_COOKIE` env var overrides the stored cookie. Tokens auto-refresh from the stored cookie. All files are mode `600`. The cookie has no readable expiry and lasts weeks to months (not guaranteed): `auth-status` shows how long ago it was stored, `auth-status --check` asks TrainingPeaks whether it still works (exit 0 valid, 1 rejected, 2 could not check, which is not the same as expired).
 
 ## Setup: Getting Your Auth Cookie
 
-1. Log in to [TrainingPeaks](https://app.trainingpeaks.com) in your browser
-2. Open DevTools → Application → Cookies → `app.trainingpeaks.com`
-3. Find `Production_tpAuth`, copy the value
+The cookie is the athlete's credential: **they** copy it from their own browser and run the command in their own terminal. An agent must not run `auth`, ask for the cookie in chat, or put it in a command. Step-by-step instructions for Chrome/Edge, Firefox and Safari are in [README.md](README.md) (section "Get your auth cookie"); point the athlete there.
 
 ```bash
-python3 skills/trainingpeaks/scripts/tp.py auth "eyJhbGci..."
+python3 skills/trainingpeaks/scripts/tp.py auth          # hidden prompt, keeps it out of shell history
+python3 skills/trainingpeaks/scripts/tp.py auth --stdin  # scripts: first line of stdin
 # ✓ Authenticated successfully!
 #   Account: user@example.com
 #   Athlete ID: 1234567
 ```
+
+If any command says the cookie has expired or is invalid, stop (don't retry) and tell the athlete to repeat the setup above.
 
 ## Commands
 
