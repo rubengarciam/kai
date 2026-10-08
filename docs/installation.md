@@ -13,7 +13,7 @@ Kai runs on **Linux or macOS** (on Windows, use WSL). Verified on Raspberry Pi O
 | `python3` | **3.12 or newer** for Garmin (TrainingPeaks needs 3.6+) | Garmin and TrainingPeaks skills | Check with `python3 --version`. If it's older, use `uv` (see [Python packages](#python-packages-garmin-only)) |
 | `python3-venv` | matches Python | Isolating the Garmin packages | Debian/Ubuntu/Raspberry Pi OS: `sudo apt install python3-venv`. macOS: included with Python |
 | `curl` and `bash` | any | Strava skill | Preinstalled on Linux and macOS |
-| Python packages | `garminconnect` 0.3.x, `fitparse`, `gpxpy` (listed in `requirements.txt`) | Garmin skill only | See [Python packages](#python-packages-garmin-only) |
+| Python packages | `garminconnect` 0.3.x, `fitparse` (listed in `requirements.txt`) | Garmin skill only | See [Python packages](#python-packages-garmin-only) |
 | Internet access | | Fetching data from TrainingPeaks, Garmin and Strava. Garmin dashboards need none: Chart.js is bundled into each page | |
 | Accounts | at least one of TrainingPeaks, Garmin Connect, Strava | Data | You may skip any you don't use |
 

@@ -1,10 +1,10 @@
 ---
 name: garmin-health-analysis
-description: Talk to your Garmin data naturally - "what was my fastest speed snowboarding?", "how did I sleep last night?", "what was my heart rate at 3pm?". Access 20+ metrics (sleep stages, Body Battery, HRV, VO2 max, training readiness, body composition, SPO2), download FIT/GPX files for route analysis, query elevation/pace at any point, and generate interactive health dashboards. From casual "show me this week's workouts" to deep "analyze my recovery vs training load".
+description: Talk to your Garmin data naturally - "what was my fastest speed snowboarding?", "how did I sleep last night?", "what was my heart rate at 3pm?". Access 20+ metrics (sleep stages, Body Battery, HRV, VO2 max, training readiness, body composition, SPO2), download FIT/TCX/GPX files for route analysis, query elevation/pace at any point, and generate interactive health dashboards. From casual "show me this week's workouts" to deep "analyze my recovery vs training load".
 version: 1.2.2
 author: EversonL & Claude
 homepage: https://github.com/eversonl/ClawdBot-garmin-health-analysis
-metadata: {"clawdbot":{"emoji":"⌚","install":[{"id":"garminconnect","kind":"python","package":"garminconnect>=0.3.16,<0.4","label":"Install garminconnect (pip)"},{"id":"fitparse","kind":"python","package":"fitparse","label":"Install fitparse (pip)"},{"id":"gpxpy","kind":"python","package":"gpxpy","label":"Install gpxpy (pip)"}]}}
+metadata: {"clawdbot":{"emoji":"⌚","install":[{"id":"garminconnect","kind":"python","package":"garminconnect>=0.3.16,<0.4","label":"Install garminconnect (pip)"},{"id":"fitparse","kind":"python","package":"fitparse","label":"Install fitparse (pip)"}]}}
 ---
 
 # Garmin Health Analysis

@@ -24,13 +24,6 @@ try:
 except ImportError:
     HAS_FITPARSE = False
 
-try:
-    import gpxpy
-    import gpxpy.gpx
-    HAS_GPXPY = True
-except ImportError:
-    HAS_GPXPY = False
-
 
 # An activity FIT file is KB to a few MB. This only bounds a corrupt or hostile archive.
 MAX_FIT_BYTES = 100 * 1024 * 1024
@@ -177,43 +170,6 @@ def parse_fit_file(file_path):
         return {"error": str(e)}
 
 
-def parse_gpx_file(file_path):
-    """Parse GPX file and extract track points."""
-    if not HAS_GPXPY:
-        return {"error": "gpxpy library not installed. Run: pip install -r requirements.txt in the Kai repo root"}
-    
-    try:
-        with open(file_path, 'r') as f:
-            gpx = gpxpy.parse(f)
-        
-        points = []
-        for track in gpx.tracks:
-            for segment in track.segments:
-                for point in segment.points:
-                    points.append({
-                        "latitude": point.latitude,
-                        "longitude": point.longitude,
-                        "elevation": point.elevation,
-                        "time": point.time.isoformat() if point.time else None,
-                        "speed": point.speed,
-                        "hr": point.extensions.get("hr") if point.extensions else None
-                    })
-        
-        return {
-            "points": points,
-            "total_points": len(points),
-            "bounds": {
-                "min_lat": gpx.get_bounds().min_latitude,
-                "max_lat": gpx.get_bounds().max_latitude,
-                "min_lon": gpx.get_bounds().min_longitude,
-                "max_lon": gpx.get_bounds().max_longitude
-            } if gpx.get_bounds() else None
-        }
-    
-    except Exception as e:
-        return {"error": str(e)}
-
-
 # TCX files are a few MB at most. This only bounds a corrupt or hostile one.
 MAX_TCX_BYTES = 100 * 1024 * 1024
 
@@ -303,6 +259,33 @@ def _tcx_lap(lap):
     return summary
 
 
+def _load_xml_root(file_path, label, root_name, max_bytes):
+    """Read an activity XML file (TCX or GPX) and return (root element, None), or (None, error dict).
+
+    Shared guards: a size limit, a refusal of DTDs and entity declarations, and a check that the root
+    element is the one the format uses, so a file handed over under the wrong extension gets a clear error.
+    """
+    try:
+        path = Path(file_path)
+        if path.stat().st_size > max_bytes:
+            return None, {"error": f"{path.name} is larger than the {max_bytes:,} byte limit for {label} files"}
+        data = path.read_bytes()
+        # Neither format ever has a DTD or entity declarations. Refusing them closes the usual XML
+        # entity-expansion trick, which the standard library parser doesn't fully guard against.
+        if re.search(rb"<!(?:DOCTYPE|ENTITY)", data, re.IGNORECASE):
+            return None, {"error": f"This file declares a DTD or XML entities, which a {label} file never does; "
+                                   "not parsing it"}
+        root = ET.fromstring(data)
+        found = root.tag.rsplit("}", 1)[-1]
+        if found != root_name:
+            return None, {"error": f"Not a {label} file (its root element is <{found}>)"}
+        return root, None
+    except ET.ParseError as e:
+        return None, {"error": f"Could not read this {label} file: {e}"}
+    except Exception as e:
+        return None, {"error": str(e)}
+
+
 def parse_tcx_file(file_path):
     """Parse a TCX file into the same shape the FIT parser returns (records, laps, total_records).
 
@@ -310,26 +293,68 @@ def parse_tcx_file(file_path):
     altitude) for activities whose FIT file the FIT parser can't decode. It has no session summary, so
     `sessions` is always empty. Uses only the standard library.
     """
+    root, error = _load_xml_root(file_path, "TCX", "TrainingCenterDatabase", MAX_TCX_BYTES)
+    if error:
+        return error
+    records = [point for point in map(_tcx_trackpoint, root.findall(".//{*}Trackpoint")) if point]
+    laps = [_tcx_lap(lap) for lap in root.findall(".//{*}Lap")]
+    return {"records": records, "laps": laps, "sessions": [], "total_records": len(records)}
+
+
+# GPX files are a few MB at most. This only bounds a corrupt or hostile one.
+MAX_GPX_BYTES = 100 * 1024 * 1024
+
+
+# Garmin's GPX export only holds points that have a GPS position, so treadmill, pool and other indoor
+# activities come out as a valid GPX with no track points at all.
+EMPTY_GPX_NOTE = ("This GPX file has no track points. Garmin leaves them out for activities recorded "
+                  "without GPS (treadmill, pool swims, some indoor rides): download the TCX instead")
+
+
+def _gpx_trackpoint(trkpt):
+    """One <trkpt> as a record with the field names the FIT and TCX parsers use. A field the point
+    doesn't have is left out. Heart rate and cadence sit in Garmin's TrackPointExtension (any version,
+    any namespace prefix), so they are matched by their local names `hr` and `cad`."""
+    point = {}
+    timestamp = _tcx_time(_tcx_text(trkpt, "time"))
+    if timestamp:
+        point["timestamp"] = timestamp
     try:
-        path = Path(file_path)
-        if path.stat().st_size > MAX_TCX_BYTES:
-            return {"error": f"{path.name} is larger than the {MAX_TCX_BYTES:,} byte limit for TCX files"}
-        data = path.read_bytes()
-        # A TCX file never has a DTD or entity declarations. Refusing them closes the usual XML
-        # entity-expansion trick, which the standard library parser doesn't fully guard against.
-        if re.search(rb"<!(?:DOCTYPE|ENTITY)", data, re.IGNORECASE):
-            return {"error": "This file declares a DTD or XML entities, which a TCX file never does; "
-                             "not parsing it"}
-        root = ET.fromstring(data)
-        if root.tag.rsplit("}", 1)[-1] != "TrainingCenterDatabase":
-            return {"error": f"Not a TCX file (its root element is <{root.tag.rsplit('}', 1)[-1]}>)"}
-        records = [point for point in map(_tcx_trackpoint, root.findall(".//{*}Trackpoint")) if point]
-        laps = [_tcx_lap(lap) for lap in root.findall(".//{*}Lap")]
-        return {"records": records, "laps": laps, "sessions": [], "total_records": len(records)}
-    except ET.ParseError as e:
-        return {"error": f"Could not read this TCX file: {e}"}
-    except Exception as e:
-        return {"error": str(e)}
+        lat, lon = float(trkpt.get("lat")), float(trkpt.get("lon"))
+    except (TypeError, ValueError):
+        lat = lon = None
+    if lat is not None and lon is not None:
+        point["latitude"], point["longitude"] = lat, lon
+    altitude = _tcx_number(trkpt, "ele")
+    if altitude is not None:
+        point["altitude"] = altitude
+    extensions = trkpt.find("{*}extensions")
+    for element in (extensions.iter() if extensions is not None else []):
+        key = {"hr": "heart_rate", "cad": "cadence"}.get(element.tag.rsplit("}", 1)[-1])
+        if key and key not in point:
+            try:
+                point[key] = int(float(element.text))
+            except (TypeError, ValueError):
+                pass
+    return point
+
+
+def parse_gpx_file(file_path):
+    """Parse a GPX file into the same shape the FIT and TCX parsers return (records, laps, total_records).
+
+    GPX carries time, position, elevation and, in Garmin's extension, heart rate and cadence. It has no
+    distance, power or speed (use the TCX or FIT file for those), and no laps or session summary, so
+    `laps` and `sessions` are empty. Only track points count: waypoints and routes are ignored. Uses
+    only the standard library.
+    """
+    root, error = _load_xml_root(file_path, "GPX", "gpx", MAX_GPX_BYTES)
+    if error:
+        return error
+    records = [point for point in map(_gpx_trackpoint, root.findall(".//{*}trk//{*}trkpt")) if point]
+    result = {"records": records, "laps": [], "sessions": [], "total_records": len(records)}
+    if not records:
+        result["note"] = EMPTY_GPX_NOTE
+    return result
 
 
 def parse_activity_file(file_path):
@@ -341,13 +366,13 @@ def parse_activity_file(file_path):
 
 def query_data_at_distance(data, distance_meters):
     """Find data point closest to a specific distance."""
-    if "records" in data:
-        records = data["records"]
-    elif "points" in data:
-        records = data["points"]
-    else:
+    if "records" not in data:
         return {"error": "No data records found"}
-    
+    records = data["records"]
+    if not any("distance" in record for record in records):
+        return {"error": "This activity file has no distance values to search (GPX files don't record "
+                         "distance). Query by --time instead, or use the TCX or FIT file of the same activity"}
+
     # Find closest by distance
     closest = None
     min_diff = float('inf')
@@ -364,13 +389,10 @@ def query_data_at_distance(data, distance_meters):
 
 def query_data_at_time(data, target_time):
     """Find data point at a specific time."""
-    if "records" in data:
-        records = data["records"]
-    elif "points" in data:
-        records = data["points"]
-    else:
+    if "records" not in data:
         return {"error": "No data records found"}
-    
+    records = data["records"]
+
     # Parse target time
     if isinstance(target_time, str):
         try:
@@ -407,7 +429,7 @@ def analyze_activity(data):
     
     records = data.get("records", [])
     if not records:
-        return {"error": "No data records to analyze"}
+        return {"error": "No data records to analyze" + (f". {data['note']}" if data.get("note") else "")}
     
     # Calculate statistics
     hr_values = [r.get("heart_rate") for r in records if r.get("heart_rate")]
