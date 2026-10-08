@@ -57,7 +57,7 @@ Overall: 5 x 6' at threshold, well executed; HR drifted 4 bpm across the set
 
 **Needs.** TrainingPeaks. This is the source of truth for load; without it Kai asks you for your recent training instead.
 
-**Good to know.** TrainingPeaks access uses your browser's login cookie, which lasts weeks and then needs renewing; see the [TrainingPeaks skill](../skills/trainingpeaks/README.md).
+**Good to know.** TrainingPeaks access uses your browser's login cookie, which lasts weeks to months and then needs renewing. The skill has no way to read its expiry, so `auth-status` shows how long ago you stored it and `auth-status --check` tests it on the spot. When it expires Kai says so, carries on with Strava and Garmin where the question allows, and tells you to renew it yourself (the cookie is a credential, so Kai never asks for it in chat). Step-by-step instructions per browser are in the [TrainingPeaks skill](../skills/trainingpeaks/README.md#1-get-your-auth-cookie).
 
 ## Recovery monitoring
 

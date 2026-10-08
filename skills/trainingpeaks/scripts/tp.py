@@ -5,6 +5,7 @@ Provides access to the TrainingPeaks internal API using cookie-based auth.
 """
 
 import argparse
+import getpass
 import json
 import os
 import sys
@@ -25,6 +26,17 @@ CONFIG_DIR = Path.home() / ".config/trainingpeaks"
 COOKIE_FILE = CONFIG_DIR / "cookie"
 TOKEN_FILE = CONFIG_DIR / "token.json"
 CONFIG_FILE = CONFIG_DIR / "config.json"
+COOKIE_NAME = "Production_tpAuth"
+README_HINT = "skills/trainingpeaks/README.md, section \"Get your auth cookie\""
+
+# Shown whenever TrainingPeaks rejects the stored cookie. Kept free of any secret.
+REAUTH_HELP = (
+    "Your TrainingPeaks login cookie has expired or is invalid.\n"
+    "  1. Log in to https://app.trainingpeaks.com in your browser.\n"
+    f"  2. Copy the {COOKIE_NAME} cookie value (steps per browser: {README_HINT}).\n"
+    "  3. In your own terminal run: python3 skills/trainingpeaks/scripts/tp.py auth\n"
+    "     and paste the value when asked (it is hidden as you type)."
+)
 
 # Valid PR types by sport
 BIKE_PR_TYPES = [
@@ -155,14 +167,32 @@ def get_cookie() -> str | None:
     return None
 
 
+def clean_cookie(raw: str) -> str:
+    """Accept what people really paste: the bare value, `Production_tpAuth=value`, or either with
+    quotes, a trailing `;` or surrounding whitespace."""
+    value = raw.strip().strip(";").strip()
+    if value.startswith(COOKIE_NAME + "="):
+        value = value[len(COOKIE_NAME) + 1:]
+    return value.strip().strip("\"'").strip()
+
+
+def write_private(path: Path, text: str) -> None:
+    """Write a file that is owner-only from the first byte (temp file + atomic replace), so the
+    secret is never readable by other users, even briefly."""
+    tmp = path.with_name(path.name + ".tmp")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(text)
+        os.replace(tmp, path)
+    finally:
+        if tmp.exists():
+            tmp.unlink()
+
+
 def store_cookie(cookie: str) -> None:
     ensure_config_dir()
-    COOKIE_FILE.write_text(cookie.strip())
-    # Restrict permissions
-    try:
-        COOKIE_FILE.chmod(0o600)
-    except OSError:
-        pass
+    write_private(COOKIE_FILE, cookie.strip())
 
 
 def load_token_cache() -> dict | None:
@@ -178,14 +208,10 @@ def load_token_cache() -> dict | None:
 
 def save_token_cache(access_token: str, expires_at: float) -> None:
     ensure_config_dir()
-    TOKEN_FILE.write_text(json.dumps({
+    write_private(TOKEN_FILE, json.dumps({
         "access_token": access_token,
         "expires_at": expires_at,
     }))
-    try:
-        TOKEN_FILE.chmod(0o600)
-    except OSError:
-        pass
 
 
 def clear_token_cache() -> None:
@@ -204,7 +230,7 @@ def load_config() -> dict:
 
 def save_config(cfg: dict) -> None:
     ensure_config_dir()
-    CONFIG_FILE.write_text(json.dumps(cfg, indent=2))
+    write_private(CONFIG_FILE, json.dumps(cfg, indent=2))
 
 
 # ─── HTTP Layer ───────────────────────────────────────────────────────────────
@@ -221,8 +247,10 @@ def _throttle() -> None:
 
 
 def _http_request(url: str, method: str = "GET", headers: dict | None = None,
-                  body: bytes | None = None) -> tuple[int, dict | list | None]:
-    """Make an HTTP request, return (status_code, parsed_json_or_None)."""
+                  body: bytes | None = None, fatal: bool = True) -> tuple[int, dict | list | None]:
+    """Make an HTTP request, return (status_code, parsed_json_or_None).
+
+    A network failure exits with an error, or returns (0, None) when fatal=False."""
     _throttle()
     if headers is None:
         headers = {}
@@ -243,10 +271,12 @@ def _http_request(url: str, method: str = "GET", headers: dict | None = None,
             data = None
         return e.code, data
     except urllib.error.URLError as e:
-        die(f"Network error: {e.reason}")
+        if fatal:
+            die(f"Network error: {e.reason}")
     except Exception as e:
-        die(f"Request failed: {e}")
-    return 0, None  # unreachable
+        if fatal:
+            die(f"Request failed: {e}")
+    return 0, None
 
 
 def exchange_cookie_for_token(cookie: str) -> dict:
@@ -261,12 +291,29 @@ def exchange_cookie_for_token(cookie: str) -> dict:
     }
     status, data = _http_request(url, "GET", headers)
     if status == 401:
-        die("Cookie expired or invalid. Re-authenticate with: tp.py auth <cookie>")
+        die(REAUTH_HELP)
     if status != 200:
-        die(f"Token exchange failed (HTTP {status})")
+        die(f"Token exchange failed (HTTP {status}). TrainingPeaks also answers like this when the cookie "
+            f"is incomplete or not a real one: copy the whole value again ({README_HINT}).")
     if not isinstance(data, dict):
         die("Invalid token response format")
     return data
+
+
+def check_cookie(cookie: str) -> tuple[str, str]:
+    """One real token exchange that never exits: returns ("valid" | "expired" | "unreachable", detail).
+
+    A network problem is reported as "unreachable", never as "expired", so a flaky connection does not
+    send someone off to re-authenticate for nothing."""
+    headers = {"Cookie": f"{COOKIE_NAME}={cookie}", "Accept": "application/json"}
+    status, data = _http_request(f"{TP_API_BASE}{TOKEN_ENDPOINT}", "GET", headers, fatal=False)
+    if status == 200 and isinstance(data, dict):
+        return "valid", ""
+    if status == 401:
+        return "expired", ""
+    if status == 0:
+        return "unreachable", "network error"
+    return "unreachable", f"HTTP {status}"
 
 
 def ensure_token() -> str:
@@ -284,7 +331,8 @@ def ensure_token() -> str:
     # Need to refresh — get cookie
     cookie = get_cookie()
     if not cookie:
-        die("Not authenticated. Run: tp.py auth <cookie>")
+        die("Not authenticated. Run: python3 skills/trainingpeaks/scripts/tp.py auth "
+            f"(cookie steps: {README_HINT})")
 
     data = exchange_cookie_for_token(cookie)
 
@@ -375,7 +423,21 @@ def get_athlete_id() -> int:
 
 def cmd_auth(args: argparse.Namespace) -> None:
     """Store and validate a Production_tpAuth cookie."""
-    cookie = args.cookie.strip()
+    if args.cookie is not None and args.stdin:
+        die("Give the cookie as an argument or with --stdin, not both")
+    if args.stdin:
+        raw = sys.stdin.readline()
+    elif args.cookie is not None:
+        raw = args.cookie
+        print("Tip: next time run `tp.py auth` with no argument and paste the cookie when asked; "
+              "that keeps it out of your shell history.", file=sys.stderr)
+    else:
+        if not sys.stdin.isatty():
+            die("No terminal to ask on. Pipe the cookie in with: tp.py auth --stdin")
+        print(f"Paste your {COOKIE_NAME} cookie value (hidden as you type).")
+        print(f"Where to find it: {README_HINT}")
+        raw = getpass.getpass("Cookie: ")
+    cookie = clean_cookie(raw)
     if not cookie:
         die("Cookie value cannot be empty")
 
@@ -406,6 +468,11 @@ def cmd_auth(args: argparse.Namespace) -> None:
             cfg["email"] = username
         save_config(cfg)
 
+    # Not a secret: lets auth-status say how old the cookie is (the cookie itself has no readable expiry).
+    cfg = load_config()
+    cfg["cookie_saved_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    save_config(cfg)
+
     print("✓ Authenticated successfully!")
     if username:
         print(f"  Account: {username}")
@@ -420,11 +487,13 @@ def cmd_auth_status(args: argparse.Namespace) -> None:
     cookie = get_cookie()
     if not cookie:
         print("✗ Not authenticated")
-        print("  Run: tp.py auth <cookie>")
+        print("  Run: python3 skills/trainingpeaks/scripts/tp.py auth")
+        print(f"  Cookie steps: {README_HINT}")
         sys.exit(1)
 
-    source = "environment variable" if os.environ.get("TP_AUTH_COOKIE") else "file"
-    print(f"Cookie: stored ({source})")
+    from_env = bool(os.environ.get("TP_AUTH_COOKIE"))
+    source = "environment variable" if from_env else "file"
+    print(f"Cookie: stored ({source}), {'age unknown' if from_env else cookie_age_text(load_config())}")
 
     cached = load_token_cache()
     if cached and cached.get("access_token"):
@@ -444,7 +513,36 @@ def cmd_auth_status(args: argparse.Namespace) -> None:
     if cfg.get("email"):
         print(f"Account: {cfg['email']}")
 
-    print("✓ Ready")
+    if args.check:
+        state, detail = check_cookie(cookie)
+        if state == "valid":
+            print("✓ Cookie accepted by TrainingPeaks")
+        elif state == "expired":
+            print("✗ TrainingPeaks rejected the cookie")
+            print(REAUTH_HELP)
+            sys.exit(1)
+        else:
+            print(f"? Could not check the cookie ({detail}). Try again later; this does not mean it expired.")
+            if detail.startswith("HTTP"):
+                print(f"  If it keeps happening, copy the whole cookie value again ({README_HINT}).")
+            sys.exit(2)
+    else:
+        print("✓ Ready (run `auth-status --check` to test the cookie against TrainingPeaks)")
+
+
+def cookie_age_text(cfg: dict) -> str:
+    """'stored N days ago', or 'stored: date unknown' for cookies saved before this was recorded."""
+    saved = cfg.get("cookie_saved_at")
+    try:
+        when = datetime.fromisoformat(saved)
+    except (TypeError, ValueError):
+        return "stored: date unknown"
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=timezone.utc)
+    days = (datetime.now(timezone.utc) - when).days
+    if days <= 0:
+        return "stored today"
+    return f"stored {days} day{'s' if days != 1 else ''} ago"
 
 
 def cmd_profile(args: argparse.Namespace) -> None:
@@ -896,10 +994,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     # auth
     p_auth = sub.add_parser("auth", help="Authenticate with a Production_tpAuth cookie")
-    p_auth.add_argument("cookie", help="Value of the Production_tpAuth cookie")
+    p_auth.add_argument("cookie", nargs="?",
+                        help="Value of the Production_tpAuth cookie. Leave it out to be asked for it "
+                             "with a hidden prompt (keeps it out of your shell history)")
+    p_auth.add_argument("--stdin", action="store_true",
+                        help="Read the cookie from the first line of standard input (for scripts)")
 
     # auth-status
-    sub.add_parser("auth-status", help="Check authentication status")
+    p_status = sub.add_parser("auth-status", help="Check authentication status")
+    p_status.add_argument("--check", action="store_true",
+                          help="Also test the cookie against TrainingPeaks (one request)")
 
     # profile
     p_profile = sub.add_parser("profile", help="Get athlete profile")
