@@ -39,7 +39,7 @@ if not token:
 
 if not token:
     print("Error: STRAVA_ACCESS_TOKEN not set.", file=sys.stderr)
-    print("Run: bash refresh_token.sh", file=sys.stderr)
+    print("Run: python3 refresh_token.py", file=sys.stderr)
     sys.exit(1)
 
 after = int((datetime.now(timezone.utc) - timedelta(days=days)).timestamp())

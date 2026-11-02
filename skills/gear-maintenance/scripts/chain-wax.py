@@ -24,7 +24,7 @@ How it works
       OVERDUE    past `max`
 
 Strava credentials come from STRAVA_ACCESS_TOKEN or ~/.config/strava/credentials.json
-(run skills/strava/scripts/refresh_token.sh if a call returns 401).
+(run skills/strava/scripts/refresh_token.py if a call returns 401).
 
 Exit codes: 0 ok, 1 error (bad input, ledger problem), 2 report printed but an odometer was unavailable.
 """
@@ -123,7 +123,7 @@ def strava_token():
         if creds.exists():
             token = json.loads(creds.read_text()).get("STRAVA_ACCESS_TOKEN")
     if not token:
-        raise OdometerUnavailable("STRAVA_ACCESS_TOKEN not set (run skills/strava/scripts/refresh_token.sh)")
+        raise OdometerUnavailable("STRAVA_ACCESS_TOKEN not set (run skills/strava/scripts/refresh_token.py)")
     return token
 
 
@@ -135,7 +135,7 @@ def fetch_gear_km(gear_id):
         with urllib.request.urlopen(req, timeout=30) as resp:
             return json.loads(resp.read())["distance"] / 1000.0
     except urllib.error.HTTPError as e:
-        hint = " (token expired: run skills/strava/scripts/refresh_token.sh)" if e.code == 401 else ""
+        hint = " (token expired: run skills/strava/scripts/refresh_token.py)" if e.code == 401 else ""
         raise OdometerUnavailable(f"Strava returned HTTP {e.code} for gear {gear_id}{hint}")
     except (urllib.error.URLError, TimeoutError, KeyError, ValueError) as e:
         raise OdometerUnavailable(f"could not read gear {gear_id} from Strava: {e}")

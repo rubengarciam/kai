@@ -11,7 +11,7 @@ Personal ledgers live in `skills/gear-maintenance/data/` and are git-ignored: `c
 
 ## Credentials
 
-Strava odometers use the Strava skill's credentials: `STRAVA_ACCESS_TOKEN`, or `~/.config/strava/credentials.json`. Tokens last 6 hours; if a call says the token expired, run `bash skills/strava/scripts/refresh_token.sh` and retry. Find your Strava bike ids with `bash skills/strava/scripts/gear-mileage.sh`.
+Strava odometers use the Strava skill's credentials: `STRAVA_ACCESS_TOKEN`, or `~/.config/strava/credentials.json`. Tokens last 6 hours; if a call says the token expired, run `python3 skills/strava/scripts/refresh_token.py` and retry. Find your Strava bike ids with `bash skills/strava/scripts/gear-mileage.sh`.
 
 ## `chain-wax.py` — Chain wax log
 
