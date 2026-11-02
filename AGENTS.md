@@ -87,8 +87,8 @@ python3 skills/trainingpeaks/scripts/tp.py metrics 2026-04-01 2026-04-07
 .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py sleep --days 3
 .venv/bin/python3 skills/garmin-health-analysis/scripts/garmin_data.py heart_rate --days 3
 
-# Strava (run refresh_token.sh first if a call returns 401; tokens last 6h)
-bash skills/strava/scripts/refresh_token.sh
+# Strava (run refresh_token.py first if a call returns 401; tokens last 6h)
+python3 skills/strava/scripts/refresh_token.py
 bash skills/strava/scripts/activities.sh --days 14
 ```
 
@@ -166,7 +166,7 @@ If the athlete wants gear tracking:
 
 ### Chain wax log
 
-Use the script; don't do the arithmetic yourself: `python3 skills/gear-maintenance/scripts/chain-wax.py` (Python standard library only). It reads live bike odometers from Strava, so it needs the Strava credentials (if it says the token expired, run `bash skills/strava/scripts/refresh_token.sh` and retry). The ledger is `skills/gear-maintenance/data/chain-wax.json` (personal data, git-ignored; `add-bike` creates it, `chain-wax.example.json` shows the format). Never hand-edit the ledger.
+Use the script; don't do the arithmetic yourself: `python3 skills/gear-maintenance/scripts/chain-wax.py` (Python standard library only). It reads live bike odometers from Strava, so it needs the Strava credentials (if it says the token expired, run `python3 skills/strava/scripts/refresh_token.py` and retry). The ledger is `skills/gear-maintenance/data/chain-wax.json` (personal data, git-ignored; `add-bike` creates it, `chain-wax.example.json` shows the format). Never hand-edit the ledger.
 
 ```bash
 python3 skills/gear-maintenance/scripts/chain-wax.py report [--json]         # km since last wax and next due, per bike

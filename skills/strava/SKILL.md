@@ -23,7 +23,7 @@ Two options (in priority order):
 
 Access tokens expire every 6 hours. Refresh:
 ```bash
-bash skills/strava/scripts/refresh_token.sh
+python3 skills/strava/scripts/refresh_token.py
 ```
 
 If a script returns a 401 error, run this first.

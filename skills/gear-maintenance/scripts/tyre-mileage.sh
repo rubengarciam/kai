@@ -67,7 +67,7 @@ if not token:
         with open(creds_path) as f:
             token = json.load(f).get("STRAVA_ACCESS_TOKEN")
 if not token:
-    print("Error: STRAVA_ACCESS_TOKEN not set. Run: bash skills/strava/scripts/refresh_token.sh", file=sys.stderr)
+    print("Error: STRAVA_ACCESS_TOKEN not set. Run: python3 skills/strava/scripts/refresh_token.py", file=sys.stderr)
     sys.exit(1)
 
 with open(ledger_path) as f:

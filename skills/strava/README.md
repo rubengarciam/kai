@@ -32,6 +32,7 @@ Authorize with `activity:read_all` scope and exchange the code for tokens via OA
 
 ```bash
 mkdir -p ~/.config/strava
+chmod 700 ~/.config/strava
 ```
 
 ```json
@@ -50,10 +51,10 @@ All scripts load credentials from this file automatically. Alternatively, set `S
 Access tokens expire every 6 hours. Refresh with:
 
 ```bash
-bash skills/strava/scripts/refresh_token.sh
+python3 skills/strava/scripts/refresh_token.py
 ```
 
-Run this if a script returns a 401 error. New tokens are written back to the credentials file automatically.
+Run this if a script returns a 401 error. New tokens are written back to the credentials file automatically, and the file is kept owner-only (`600`). `refresh_token.sh` still works and just calls the Python script.
 
 ## Scripts
 
